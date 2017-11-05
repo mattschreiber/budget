@@ -1,11 +1,9 @@
 package models
 
 import (
-  "fmt"
   "time"
   "database/sql"
   _ "github.com/lib/pq"
-  "log"
 )
 
 type Budget struct {
@@ -19,10 +17,10 @@ type Budget struct {
   Trans_date time.Time
 }
 
-func AllBudgetEntries () {
+func AllBudgetEntries () ([]Budget, error) {
   rows, err := db.Query("SELECT * FROM budget")
   if err != nil {
-    log.Fatal(err)
+    return nil, err
   }
   defer rows.Close()
 
@@ -31,14 +29,32 @@ func AllBudgetEntries () {
     var budgetRow Budget
     err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Applied)
     if err != nil {
-      log.Fatal(err)
+      return nil, err
     }
     budgetEntries = append(budgetEntries, budgetRow)
   }
   if err = rows.Err(); err != nil {
-   log.Fatal(err)
+   return nil, err
   }
-  for _, v := range budgetEntries {
-    fmt.Printf("%d, %d, %d, %d, %d, %t, %s\n", v.Id, v.Credit, v.Debit, v.Store_id, v.Category_id, v.Applied, v.Trans_date.Format(time.RFC822))
+
+  return budgetEntries, nil
+}
+
+func BudgetTotal() (balance int, err error) {
+  rows, err := db.Query("SELECT SUM(credit - debit) as balance FROM budget")
+  if err != nil {
+    return -1, err
   }
+  defer rows.Close()
+  for rows.Next(){
+    err = rows.Scan(&balance)
+    if err != nil {
+      return -1, err
+    }
+  }
+  if err = rows.Err(); err != nil {
+   return -1, err
+  }
+
+  return balance, nil
 }
