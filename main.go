@@ -13,7 +13,7 @@ func main() {
 
   budgetEntries, _ := models.AllBudgetEntries()
   for _, v := range budgetEntries {
-    fmt.Printf("%d, %d, %d, %d, %d, %t, %s\n", v.Id, v.Credit, v.Debit, v.Store_id, v.Category_id, v.Applied, v.Trans_date.Format(time.RFC822))
+    fmt.Printf("%d, %d, %d, %d, %d, %t, %s, %s\n", v.Id, v.Credit, v.Debit, v.Store_id, v.Category_id, v.Applied, v.Trans_date.Format(time.RFC822), v.Store_name)
   }
   budgetTotal, err := models.BudgetTotal(time.Now())
   if err != nil {
@@ -22,7 +22,11 @@ func main() {
   }
   fmt.Printf("Balance: %d\n", budgetTotal)
 
-  projBalance, err := models.ProjectedBalance()
+  layout := "2006-01-02"
+  startDate, _ := time.Parse(layout, "1900-01-01")
+  endDate, _ := time.Parse(layout, "2020-01-01")
+
+  projBalance, err := models.ProjectedBalance(startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return
