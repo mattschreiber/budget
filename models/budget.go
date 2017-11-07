@@ -8,15 +8,15 @@ import (
 )
 
 type Budget struct {
-  Id int
-  Credit int
-  Debit int
-  Trans_date time.Time
-  Store_id int
-  User_id sql.NullInt64
-  Category_id int
-  Applied bool
-  Store_name string
+  Id int `json:"id"`
+  Credit int `json:"credit"`
+  Debit int `json:"debit"`
+  Trans_date time.Time `json:"trans_date"`
+  Store_id int `json:"store_id"`
+  User_id sql.NullInt64 `json:"user_id"`
+  Category_id int `json:"category_id"`
+  Applied bool `json:"applied"`
+  Store_name string `json:"store_name,omitempty"`
 }
 
 func AllBudgetEntries() ([]Budget, error) {
@@ -81,11 +81,17 @@ func BudgetTotal(t time.Time) (balance int, err error) {
 // The applied column should be set to true when an entry in the budget table is recorded on the ledger.
 // The last step is to sum the ledger balance with the budget balance.
 func ProjectedBalance(startDate time.Time, endDate time.Time) (projBalance int, err error) {
-  err = db.QueryRow("SELECT currentBudget($1, $2);", startDate, endDate).Scan(&projBalance)
+  var ledgerBal int
+  err = db.QueryRow("SELECT sum(credit-debit) as balance from ledger").Scan(&ledgerBal)
   if err != nil {
     return -1, err
   }
-  return projBalance, nil
+  var budgetBal int
+  err = db.QueryRow("SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2 AND applied != true", startDate, endDate).Scan(&budgetBal)
+  if err != nil {
+    return -1, err
+  }
+  return ledgerBal + budgetBal, nil
 }
 
 // if t.Day() < 15 {
