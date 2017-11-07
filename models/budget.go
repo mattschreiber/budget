@@ -16,11 +16,15 @@ type Budget struct {
   User_id sql.NullInt64
   Category_id int
   Applied bool
+  Store_name string
 }
 
 func AllBudgetEntries() ([]Budget, error) {
-  rows, err := db.Query("SELECT * FROM budget")
+  // now := time.Now()
+  // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
+  rows, err := db.Query("SELECT b.id, b.credit, b.debit, b.trans_date, b.store_id, b.user_id, b.category_id, b.applied, s.store_name  FROM budget as b join store as s on b.store_id = s.id")
   if err != nil {
+    fmt.Println(err)
     return nil, err
   }
   defer rows.Close()
@@ -28,7 +32,7 @@ func AllBudgetEntries() ([]Budget, error) {
   var budgetEntries []Budget
   for rows.Next() {
     var budgetRow Budget
-    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Applied)
+    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Applied, &budgetRow.Store_name)
     if err != nil {
       return nil, err
     }
@@ -69,8 +73,15 @@ func BudgetTotal(t time.Time) (balance int, err error) {
   return balance, nil
 }
 
-func ProjectedBalance() (projBalance int, err error) {
-  err = db.QueryRow("SELECT currentBudget();").Scan(&projBalance)
+// ProjectedBalance is a function that calculates the total budgeted balance at any given time.
+// The function accepts a starting and ending date and returns the balance in cents as an integer
+// The projected balance is calculated by first finding the current actual ledger balance.
+// The second step is to calculate the budgeted balance for a given time period using a provided date range and eliminating any entries from
+// the budget table where the applied column is equal to true.
+// The applied column should be set to true when an entry in the budget table is recorded on the ledger.
+// The last step is to sum the ledger balance with the budget balance.
+func ProjectedBalance(startDate time.Time, endDate time.Time) (projBalance int, err error) {
+  err = db.QueryRow("SELECT currentBudget($1, $2);", startDate, endDate).Scan(&projBalance)
   if err != nil {
     return -1, err
   }
