@@ -23,10 +23,10 @@ func main() {
   fmt.Printf("Balance: %d\n", budgetTotal)
 
   layout := "2006-01-02"
-  startDate, _ := time.Parse(layout, "1900-01-01")
+  // startDate, _ := time.Parse(layout, "1900-01-01")
   endDate, _ := time.Parse(layout, "2020-01-01")
 
-  projBalance, err := models.ProjectedBalance(startDate, endDate)
+  projBalance, err := models.ProjectedBalance(endDate)
   if err != nil {
     fmt.Println(err)
     return
