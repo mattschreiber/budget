@@ -31,12 +31,17 @@ func main() {
     fmt.Println(err)
     return
   }
-  enc := json.NewEncoder(os.Stdout)
+  // enc := json.NewEncoder(os.Stdout)
   d := map[string]int{"projBalance": projBalance}
-  enc.Encode(d)
+  json.NewEncoder(os.Stdout).Encode(d)
 
   enc1 := json.NewEncoder(os.Stdout)
   budgetEntry, _ := models.BudgetEntry(1)
   enc1.Encode(budgetEntry)
   // fmt.Println(budgetEntry)
+
+  categories, _ := models.AllCategories()
+  for _, v := range categories {
+    fmt.Printf("%d, %s\n", v.Id, v.Category_name)
+  }
 }
