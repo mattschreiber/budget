@@ -5,7 +5,7 @@ import (
   "database/sql"
   _ "github.com/lib/pq"
   "fmt"
-  "sync"
+  // "sync"
 )
 
 type Budget struct {
@@ -83,28 +83,29 @@ func BudgetTotal(t time.Time) (balance int, err error) {
 // The last step is to sum the ledger balance with the budget balance.
 func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 
-  //sql statements that will be called concurrently to get budget and ledger balances
-  budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date <= $1 AND applied != true"
-  ledgerStmt := "SELECT sum(credit-debit) as balance from ledger WHERE trans_date <= $1"
-  sqlStmts := []string{budgetStmt, ledgerStmt}
+  // //sql statements that will be called concurrently to get budget and ledger balances
+  // budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date >= $1"
+  // ledgerStmt := "SELECT sum(credit-debit) as balance from ledger WHERE trans_date <= $1"
+  // sqlStmts := []string{budgetStmt, ledgerStmt}
+  //
+  // var wg sync.WaitGroup
+  // var sumBalance int
+  // // anonymous function used by go routines to process ledger and budget balance queries concurrently
+  // for _, sqlStmt := range sqlStmts {
+  //   wg.Add(1)
+  //   go func(sqlStmt string, endDate time.Time){
+  //     var balance int
+  //     defer wg.Done()
+  //     err = db.QueryRow(sqlStmt, endDate).Scan(&balance)
+  //     sumBalance += balance
+  //   }(sqlStmt, endDate)
+  // }
+  // wg.Wait()
+  // if err != nil {
+  //   return -1, err
+  // }
+  // return sumBalance, nil
 
-  var wg sync.WaitGroup
-  var sumBalance int
-  // anonymous function used by go routines to process ledger and budget balance queries concurrently
-  for _, sqlStmt := range sqlStmts {
-    wg.Add(1)
-    go func(sqlStmt string, endDate time.Time){
-      var balance int
-      defer wg.Done()
-      err = db.QueryRow(sqlStmt, endDate).Scan(&balance)
-      sumBalance += balance
-    }(sqlStmt, endDate)
-  }
-  wg.Wait()
-  if err != nil {
-    return -1, err
-  }
-  return sumBalance, nil
 
 
 
@@ -121,37 +122,61 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
   // return ledgerBalance + budgetBalance, nil
 
 
-  // type Balance struct {
-  //   Amount int
-  //   Error error
-  // }
-  // getBalance := func(sqlStmt string, endDate time.Time, c chan Balance){
-  //   var balance int
-  //   err = db.QueryRow(sqlStmt, endDate).Scan(&balance)
-  //   if err != nil {
-  //     c <- Balance{0, err}
-  //   }
-  //   c <- Balance{balance, nil}
-  // }
+  type Balance struct {
+    Amount int
+    Error error
+  }
+  getLedgerBalance := func(sqlStmt string, today time.Time, c chan Balance){
+    var balance int
+    err = db.QueryRow(sqlStmt, today).Scan(&balance)
+    if err != nil {
+      c <- Balance{0, err}
+    }
+    c <- Balance{balance, nil}
+  }
+
+  getBudgetBalance := func(sqlStmt string, today time.Time, endDate time.Time, c chan Balance){
+
+    var startDate time.Time
+    if today.Day() >= 15 {
+      middleOfMonth := time.Date(today.Year(), today.Month(), 15, 0, 0, 0, 0, time.UTC)
+      startDate = middleOfMonth
+    }else {
+      currentYear, currentMonth, _ := today.Date()
+      currentLocation := today.Location()
+      firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+      // lastOfMonth := firstOfMonth.AddDate(0, 0, 0)
+      startDate = firstOfMonth
+    }
+
+    var balance int
+    err = db.QueryRow(sqlStmt, startDate, endDate).Scan(&balance)
+    if err != nil {
+      c <- Balance{0, err}
+    }
+    c <- Balance{balance, nil}
+  }
+
+  today := time.Now()
+
+  //sql statements that will be called concurrently to get budget and ledger balances
+  budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2"
+  ledgerStmt := "SELECT sum(credit-debit) as balance from ledger WHERE trans_date <= $1"
   //
-  // //sql statements that will be called concurrently to get budget and ledger balances
-  // budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date <= $1 AND applied != true"
-  // ledgerStmt := "SELECT sum(credit-debit) as balance from ledger WHERE trans_date <= $1"
   //
+  c := make(chan Balance) // channel for Balance amount and error handling
+  go getBudgetBalance(budgetStmt, today, endDate, c)
+  go getLedgerBalance(ledgerStmt, today, c)
   //
-  // c := make(chan Balance) // channel for Balance amount and error handling
-  // go getBalance(budgetStmt, endDate, c)
-  // go getBalance(ledgerStmt, endDate, c)
+  budgetBal, ledgerBal := <-c, <-c // receive Balance struct from go routines
   //
-  // budgetBal, ledgerBal := <-c, <-c // receive Balance struct from go routines
-  //
-  // if budgetBal.Error != nil {
-  //   return -1, budgetBal.Error
-  // }
-  // if ledgerBal.Error != nil {
-  //   return -1, ledgerBal.Error
-  // }
-  // return ledgerBal.Amount + budgetBal.Amount, nil
+  if budgetBal.Error != nil {
+    return -1, budgetBal.Error
+  }
+  if ledgerBal.Error != nil {
+    return -1, ledgerBal.Error
+  }
+  return ledgerBal.Amount + budgetBal.Amount, nil
 
 }
 

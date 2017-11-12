@@ -26,6 +26,7 @@ func main() {
   // startDate, _ := time.Parse(layout, "1900-01-01")
   endDate, _ := time.Parse(layout, "2020-01-01")
 
+
   projBalance, err := models.ProjectedBalance(endDate)
   if err != nil {
     fmt.Println(err)
