@@ -86,14 +86,22 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
     Amount int
     Error error
   }
-
   //sql statements that will be called concurrently to get ledger balances
   // we search for all ledger entries up through the last pay period. we do not want current  pay period
   // ledger transaction when calculating the projected balance.
   ledgerStmt := "SELECT sum(credit-debit) as balance from ledger WHERE trans_date < $1"
-  getLedgerBalance := func(sqlStmt string, prevPayDate time.Time, c chan Balance){
+  getLedgerBalance := func(sqlStmt string, prevPayDate time.Time, endDate time.Time, c chan Balance){
     var balance int
-    err = db.QueryRow(sqlStmt, prevPayDate).Scan(&balance)
+
+    // If the end date for the projection time period is before the current pay period ends then
+    // only include ledger entries through the previous pay period. Otherwise include all entries
+    // until the provided end date.
+    if endDate.Before(currentPayPeriod()) {
+      err = db.QueryRow(sqlStmt, prevPayDate).Scan(&balance)
+    }else {
+      err = db.QueryRow(sqlStmt, endDate).Scan(&balance)
+      fmt.Println("endDate after")
+    }
     if err != nil {
       c <- Balance{0, err}
     }
@@ -103,20 +111,24 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
   // we want transactions starting with the beginning of the current pay period and up until a user provided end date
   budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2"
   getBudgetBalance := func(sqlStmt string, prevPayDate time.Time, endDate time.Time, c chan Balance){
-
     var balance int
-    err = db.QueryRow(sqlStmt, prevPayDate, endDate).Scan(&balance)
+
+    // If the end date provided is after the current pay period then find all budget entries starting with the
+    // the beginning of the next pay period and ending on the user provided end date
+    if endDate.After(currentPayPeriod()) {
+      err = db.QueryRow(sqlStmt, currentPayPeriod(), endDate).Scan(&balance)
+    }else {
+      err = db.QueryRow(sqlStmt, prevPayDate, endDate).Scan(&balance)
+    }
     if err != nil {
       c <- Balance{0, err}
     }
     c <- Balance{balance, nil}
   }
 
-  //
-  //
   c := make(chan Balance) // channel for Balance amount and error handling
   go getBudgetBalance(budgetStmt, prevPayDate(), endDate, c)
-  go getLedgerBalance(ledgerStmt, prevPayDate(), c)
+  go getLedgerBalance(ledgerStmt, prevPayDate(), endDate, c)
   //
   budgetBal, ledgerBal := <-c, <-c // receive Balance struct from go routines
   //
@@ -130,7 +142,7 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 
 }
 
-// finds the end of the previous pay period which is needed to calculate the future projected balance
+// utility function that finds the end of the previous pay period which is needed to calculate the future projected balance
 // pay periods are assumed to be bi-monthly
 func prevPayDate() (time.Time) {
   today := time.Now()
@@ -146,6 +158,19 @@ func prevPayDate() (time.Time) {
     prevPayDate = firstOfMonth
   }
   return prevPayDate
+}
+
+func currentPayPeriod() (time.Time) {
+  today := time.Now()
+  var endPayPeriod time.Time
+  if today.Day() >= 15 {
+    // endPayPeriod is equal to first day of next month if date >= 15
+    endPayPeriod = time.Date(today.Year(), today.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+  }else {
+    // endPayPeriod equal to 15th of the month.
+    endPayPeriod = time.Date(today.Year(), today.Month(), 15, 0, 0, 0, 0, time.UTC)
+  }
+  return endPayPeriod
 }
 
   // //sql statements that will be called concurrently to get budget and ledger balances
