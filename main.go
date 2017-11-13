@@ -36,6 +36,15 @@ func main() {
   d := map[string]int{"projBalance": projBalance}
   json.NewEncoder(os.Stdout).Encode(d)
 
+  projectedBalance, _ := models.ProjBalance(endDate)
+  // if err != nil {
+  //   fmt.Println(err)
+  //   return
+  // }
+  // enc := json.NewEncoder(os.Stdout)
+  d1 := map[string]int{"projectedBalance": projectedBalance}
+  json.NewEncoder(os.Stdout).Encode(d1)
+
   enc1 := json.NewEncoder(os.Stdout)
   budgetEntry, _ := models.BudgetEntry(1)
   enc1.Encode(budgetEntry)
