@@ -108,16 +108,16 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 
   // If the end date provided is after the current pay period then find all budget entries starting with the
   // the beginning of the next pay period and ending on the user provided end date
-  if endDate.After(currentPayPeriod()) {
-    go GetBudgetBalance(currentPayPeriod(), endDate, c)
+  if endDate.After(currentPayPeriod(time.Now())) {
+    go GetBudgetBalance(currentPayPeriod(time.Now()), endDate, c)
   }else {
-    go GetBudgetBalance(prevPayDate(), endDate, c)
+    go GetBudgetBalance(prevPayDate(time.Now()), endDate, c)
   }
   // If the end date for the projection time period is before the current pay period ends then
   // only include ledger entries through the previous pay period. Otherwise include all entries
   // until the provided end date.
-  if endDate.Before(currentPayPeriod()) {
-    go GetLedgerBalance(prevPayDate(), c)
+  if endDate.Before(currentPayPeriod(time.Now())) {
+    go GetLedgerBalance(prevPayDate(time.Now()), c)
   }else {
     go GetLedgerBalance(endDate, c)
   }
@@ -135,8 +135,8 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 }
 // utility function that finds the end of the previous pay period which is needed to calculate the future projected balance
 // pay periods are assumed to be bi-monthly
-func prevPayDate() (time.Time) {
-  today := time.Now()
+func prevPayDate(today time.Time) (time.Time) {
+  // today := time.Now()
   var prevPayDate time.Time
   if today.Day() >= 15 {
     middleOfMonth := time.Date(today.Year(), today.Month(), 15, 0, 0, 0, 0, time.UTC)
@@ -151,8 +151,8 @@ func prevPayDate() (time.Time) {
   return prevPayDate
 }
 
-func currentPayPeriod() (time.Time) {
-  today := time.Now()
+func currentPayPeriod(today time.Time) (time.Time) {
+
   var endPayPeriod time.Time
   if today.Day() >= 15 {
     // endPayPeriod is equal to first day of next month if date >= 15
