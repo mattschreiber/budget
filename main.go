@@ -9,6 +9,7 @@ import (
   "log"
   "net/http"
   "github.com/gorilla/mux"
+  "github.com/gorilla/handlers"
 )
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
   router := mux.NewRouter()
   router.HandleFunc("/", GetProjBalance).Methods("GET")
   //start server on port
-  log.Fatal(http.ListenAndServe(":12345", router))
+  log.Fatal(http.ListenAndServe(":5000", handlers.CORS()(router)))
 }
 
 func GetProjBalance(w http.ResponseWriter, req *http.Request) {
