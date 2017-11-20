@@ -8,8 +8,10 @@ import (
   "os"
   "log"
   "net/http"
+
   "github.com/gorilla/mux"
   "github.com/gorilla/handlers"
+  "budget/middlewares"
 )
 
 func main() {
@@ -38,6 +40,8 @@ func main() {
 
   router := mux.NewRouter()
   router.HandleFunc("/home/{endDate}", GetProjBalance).Methods("GET")
+  router.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
+  router.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
   //start server on port
   log.Fatal(http.ListenAndServe(":5000", handlers.CORS()(router)))
 }
