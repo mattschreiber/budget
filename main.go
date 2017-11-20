@@ -37,15 +37,17 @@ func main() {
   }
 
   router := mux.NewRouter()
-  router.HandleFunc("/", GetProjBalance).Methods("GET")
+  router.HandleFunc("/home/{endDate}", GetProjBalance).Methods("GET")
   //start server on port
   log.Fatal(http.ListenAndServe(":5000", handlers.CORS()(router)))
 }
 
 func GetProjBalance(w http.ResponseWriter, req *http.Request) {
-  layout := "2006-01-02"
+  params := mux.Vars(req)
+  fmt.Println(params["endDate"])
+  layout := "2006-1-2"
   // startDate, _ := time.Parse(layout, "1900-01-01")
-  endDate, _ := time.Parse(layout, "2020-01-01")
+  endDate, _ := time.Parse(layout, params["endDate"])
 
   projBalance, err := models.ProjectedBalance(endDate)
   if err != nil {
