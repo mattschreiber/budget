@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+  "context"
 	"strings"
 	"time"
 
@@ -55,19 +56,20 @@ type UserCredentials struct {
 // 	Password string `json:"password"`
 // }
 
-type Response struct {
-	Data string `json:"data"`
-}
 
 type Token struct {
 	Token string `json:"token"`
 }
 
-// jwtCustomClaims are custom claims extending default ones.
-type jwtCustomClaims struct {
+// JwtCustomClaims are custom claims extending default ones.
+type JwtCustomClaims struct {
 	Name  string `json:"name"`
 	Admin bool   `json:"admin"`
 	jwt.StandardClaims
+}
+
+type Exception struct {
+    Message string `json:"message"`
 }
 
 
@@ -94,7 +96,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 
   // Set custom claims
-	claims := &jwtCustomClaims{
+	claims := &JwtCustomClaims{
 		user.Username,
 		true,
 		jwt.StandardClaims{
@@ -117,66 +119,37 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
 
-
-
-	// token := jwt.New(jwt.SigningMethodHS256)
-	// claims := make(jwt.MapClaims)
-	// claims["exp"] = time.Now().Add(time.Hour * time.Duration(1)).Unix()
-	// claims["iat"] = time.Now().Unix()
-	// token.Claims = claims
-
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	fmt.Fprintln(w, "Error extracting the key")
-	// 	fatal(err)
-	// }
-  // var signingKey = []byte("signing-key")
-	// tokenString, err := token.SignedString(signingKey)
-  //
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	fmt.Fprintln(w, "Error while signing the token")
-	// 	fatal(err)
-	// }
-  //
-	// response := Token{tokenString}
-	// JsonResponse(response, w)
-
 }
 
-func ValidateToken(w http.ResponseWriter, r *http.Request) {
+func ValidateToken(next http.HandlerFunc) http.HandlerFunc {
   signingKey := []byte("secret")
+  return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+    token, err := request.ParseFromRequestWithClaims(req, request.AuthorizationHeaderExtractor, &JwtCustomClaims{},
+      func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+        return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+    }
+       return signingKey, nil
+     })
+     if err != nil {
+        http.Error(w, err.Error(), http.StatusUnauthorized)
+        return
+     }
 
-  token, err := request.ParseFromRequestWithClaims(r, request.AuthorizationHeaderExtractor, &jwtCustomClaims{},
-    func(token *jwt.Token) (interface{}, error) {
-     return signingKey, nil
-   })
-   if claims, ok := token.Claims.(*jwtCustomClaims); ok && token.Valid {
-       fmt.Printf("%v %v", claims.Name, claims.StandardClaims.ExpiresAt)
-   }
-	if err == nil {
-		if token.Valid {
-      return
-		} else {
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprint(w, "Token is not valid")
-		}
-	} else { 
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "Unauthorized access to this resource")
-  }
+     if token.Valid {
+       if claims, ok := token.Claims.(*JwtCustomClaims); ok {
+         ctx := context.WithValue(req.Context(), "decoded", claims)
+         fmt.Printf("%v %v", claims.Name, claims.StandardClaims.ExpiresAt)
+         next(w, req.WithContext(ctx))
+       } else {
+     		// w.WriteHeader(http.StatusUnauthorized)
+     		fmt.Fprint(w, "Unauthorized access to this resource")
+       }
+     }else {
+       fmt.Fprint(w, "Token is not valid")
+       // w.WriteHeader(http.StatusUnauthorized)
+       return
+
+     }
+  })
 }
-
-
-// func JsonResponse(response interface{}, w http.ResponseWriter) {
-//
-// 	json, err := json.Marshal(response)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-//
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.Write(json)
-// }

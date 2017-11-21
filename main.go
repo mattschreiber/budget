@@ -38,9 +38,9 @@ func main() {
   }
 
   r := mux.NewRouter()
-  r.HandleFunc("/home/{endDate}", GetProjBalance).Methods("GET", "OPTIONS")
+  r.HandleFunc("/home/{endDate}", middlewares.ValidateToken(GetProjBalance)).Methods("GET", "OPTIONS")
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
-  r.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
+  // r.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
   http.Handle("/", &MyServer{r})
   log.Fatal(http.ListenAndServe(":5000", nil))
 
