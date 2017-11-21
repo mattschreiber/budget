@@ -10,7 +10,6 @@ import (
   "net/http"
 
   "github.com/gorilla/mux"
-  "github.com/gorilla/handlers"
   "budget/middlewares"
 )
 
@@ -38,15 +37,17 @@ func main() {
     fmt.Printf("%d, %s\n", v.Id, v.Category_name)
   }
 
-  router := mux.NewRouter()
-  router.HandleFunc("/home/{endDate}", GetProjBalance).Methods("GET")
-  router.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
-  router.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
-  //start server on port
-  log.Fatal(http.ListenAndServe(":5000", handlers.CORS()(router)))
+  r := mux.NewRouter()
+  r.HandleFunc("/home/{endDate}", GetProjBalance).Methods("GET", "OPTIONS")
+  r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
+  r.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
+  http.Handle("/", &MyServer{r})
+  log.Fatal(http.ListenAndServe(":5000", nil))
+
 }
 
 func GetProjBalance(w http.ResponseWriter, req *http.Request) {
+
   params := mux.Vars(req)
   fmt.Println(params["endDate"])
   layout := "2006-1-2"
@@ -63,4 +64,24 @@ func GetProjBalance(w http.ResponseWriter, req *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(d)
 
+}
+
+
+type MyServer struct {
+    r *mux.Router
+}
+
+func (s *MyServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+    if origin := req.Header.Get("Origin"); origin != "" {
+        rw.Header().Set("Access-Control-Allow-Origin", origin)
+        rw.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        rw.Header().Set("Access-Control-Allow-Headers",
+            "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+    }
+    // Stop here if its Preflighted OPTIONS request
+    if req.Method == "OPTIONS" {
+        return
+    }
+    // Lets Gorilla work
+    s.r.ServeHTTP(rw, req)
 }

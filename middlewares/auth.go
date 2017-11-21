@@ -156,14 +156,12 @@ func ValidateToken(w http.ResponseWriter, r *http.Request) {
    }
 	if err == nil {
 		if token.Valid {
-      x := map[string]string{"data": "token valid"}
-      w.Header().Set("Content-Type", "application/json")
-      json.NewEncoder(w).Encode(x)
+      return
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprint(w, "Token is not valid")
 		}
-	} else {
+	} else { 
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "Unauthorized access to this resource")
   }
