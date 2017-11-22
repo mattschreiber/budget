@@ -103,7 +103,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		user.Username,
 		true,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * 720).Unix(),
 		},
 	}
 
@@ -118,7 +118,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
 
@@ -143,7 +142,6 @@ func ValidateToken(next http.HandlerFunc) http.HandlerFunc {
        t := TokenContextKey{}
        if claims, ok := token.Claims.(*JwtCustomClaims); ok {
          ctx := context.WithValue(req.Context(), t.Name, claims.Name)
-         fmt.Printf("%v %v\n", claims.Name, claims.StandardClaims.ExpiresAt)
          next(w, req.WithContext(ctx))
        } else {
      		// w.WriteHeader(http.StatusUnauthorized)
