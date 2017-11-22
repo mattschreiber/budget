@@ -43,6 +43,9 @@ func fatal(err error) {
 	}
 }
 
+type TokenContextKey struct {
+  Name string
+}
 
 type UserCredentials struct {
 	Username string `json:"username"`
@@ -137,19 +140,21 @@ func ValidateToken(next http.HandlerFunc) http.HandlerFunc {
      }
 
      if token.Valid {
+       t := TokenContextKey{}
        if claims, ok := token.Claims.(*JwtCustomClaims); ok {
-         ctx := context.WithValue(req.Context(), "decoded", claims)
-         fmt.Printf("%v %v", claims.Name, claims.StandardClaims.ExpiresAt)
+         ctx := context.WithValue(req.Context(), t.Name, claims.Name)
+         fmt.Printf("%v %v\n", claims.Name, claims.StandardClaims.ExpiresAt)
          next(w, req.WithContext(ctx))
        } else {
      		// w.WriteHeader(http.StatusUnauthorized)
-     		fmt.Fprint(w, "Unauthorized access to this resource")
+        http.Error(w, err.Error(), http.StatusUnauthorized)
+        return
        }
      }else {
        fmt.Fprint(w, "Token is not valid")
        // w.WriteHeader(http.StatusUnauthorized)
+       http.Error(w, err.Error(), http.StatusUnauthorized)
        return
-
      }
   })
 }

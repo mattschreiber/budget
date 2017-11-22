@@ -13,6 +13,10 @@ import (
   "budget/middlewares"
 )
 
+type TokenContextKey struct {
+  Name string
+}
+
 func main() {
   models.InitDB()
 
@@ -47,6 +51,14 @@ func main() {
 }
 
 func GetProjBalance(w http.ResponseWriter, req *http.Request) {
+
+  t := TokenContextKey{}
+  if token := req.Context().Value(t.Name); token != nil {
+		// User is logged in
+    fmt.Println(token)
+	} else {
+		// User is not logged in
+	}
 
   params := mux.Vars(req)
   fmt.Println(params["endDate"])
