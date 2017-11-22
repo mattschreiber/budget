@@ -11,11 +11,8 @@ import (
 
   "github.com/gorilla/mux"
   "budget/middlewares"
+  "budget/controllers"
 )
-
-type TokenContextKey struct {
-  Name string
-}
 
 func main() {
   models.InitDB()
@@ -42,7 +39,7 @@ func main() {
   }
 
   r := mux.NewRouter()
-  r.HandleFunc("/home/{endDate}", middlewares.ValidateToken(GetProjBalance)).Methods("GET", "OPTIONS")
+  r.HandleFunc("/home/{endDate}", middlewares.ValidateToken(controllers.GetProjBalance)).Methods("GET", "OPTIONS")
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
   // r.HandleFunc("/valid", middlewares.ValidateToken).Methods("GET")
   http.Handle("/", &MyServer{r})
@@ -50,33 +47,33 @@ func main() {
 
 }
 
-func GetProjBalance(w http.ResponseWriter, req *http.Request) {
-
-  t := TokenContextKey{}
-  if token := req.Context().Value(t.Name); token != nil {
-		// User is logged in
-    fmt.Println(token)
-	} else {
-		// User is not logged in
-	}
-
-  params := mux.Vars(req)
-  fmt.Println(params["endDate"])
-  layout := "2006-1-2"
-  // startDate, _ := time.Parse(layout, "1900-01-01")
-  endDate, _ := time.Parse(layout, params["endDate"])
-
-  projBalance, err := models.ProjectedBalance(endDate)
-  if err != nil {
-    fmt.Println(err)
-    return
-  }
-  // enc := json.NewEncoder(os.Stdout)
-  d := map[string]int{"projBalance": projBalance}
-  w.Header().Set("Content-Type", "application/json")
-  json.NewEncoder(w).Encode(d)
-
-}
+// func GetProjBalance(w http.ResponseWriter, req *http.Request) {
+//
+//   t := TokenContextKey{}
+//   if token := req.Context().Value(t.Name); token != nil {
+// 		// User is logged in
+//     fmt.Println(token)
+// 	} else {
+// 		// User is not logged in
+// 	}
+//
+//   params := mux.Vars(req)
+//   fmt.Println(params["endDate"])
+//   layout := "2006-1-2"
+//   // startDate, _ := time.Parse(layout, "1900-01-01")
+//   endDate, _ := time.Parse(layout, params["endDate"])
+//
+//   projBalance, err := models.ProjectedBalance(endDate)
+//   if err != nil {
+//     fmt.Println(err)
+//     return
+//   }
+//   // enc := json.NewEncoder(os.Stdout)
+//   d := map[string]int{"projBalance": projBalance}
+//   w.Header().Set("Content-Type", "application/json")
+//   json.NewEncoder(w).Encode(d)
+//
+// }
 
 
 type MyServer struct {
