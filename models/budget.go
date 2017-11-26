@@ -16,7 +16,6 @@ type Budget struct {
   Store_id int `json:"store_id"`
   User_id sql.NullInt64 `json:"user_id"`
   Category_id int `json:"category_id"`
-  Applied bool `json:"applied"`
   Store_name string `json:"store_name,omitempty"`
 }
 
@@ -28,8 +27,7 @@ type Balance struct {
 func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
   // now := time.Now()
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
-  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, b.store_id, b.user_id, b.category_id, b.applied, s.store_name
-    FROM budget as b join store as s on b.store_id = s.id WHERE trans_date BETWEEN $1 AND $2`, startDate, endDate)
+  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, b.store_id, b.user_id, b.category_id, s.store_name FROM budget as b join store as s on b.store_id = s.id WHERE trans_date BETWEEN $1 AND $2`, startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return nil, err
@@ -39,13 +37,15 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
   var budgetEntries []Budget
   for rows.Next() {
     var budgetRow Budget
-    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Applied, &budgetRow.Store_name)
+    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Store_name)
     if err != nil {
+      fmt.Println("error scaning", err)
       return nil, err
     }
     budgetEntries = append(budgetEntries, budgetRow)
   }
   if err = rows.Err(); err != nil {
+    fmt.Println(err)
    return nil, err
   }
 
@@ -53,7 +53,7 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
 }
 
 func BudgetEntry(id int) (budget Budget, err error) {
-  err = db.QueryRow("SELECT * FROM budget WHERE id = $1", id).Scan(&budget.Id, &budget.Credit, &budget.Debit, &budget.Trans_date, &budget.Store_id, &budget.User_id, &budget.Category_id, &budget.Applied)
+  err = db.QueryRow("SELECT * FROM budget WHERE id = $1", id).Scan(&budget.Id, &budget.Credit, &budget.Debit, &budget.Trans_date, &budget.Store_id, &budget.User_id, &budget.Category_id)
   if err != nil {
     fmt.Println(err)
     return Budget{}, err

@@ -25,8 +25,7 @@ func GetProjBalance(w http.ResponseWriter, req *http.Request) {
 		// User is not logged in
 	}
   params := mux.Vars(req)
-  // layout := "2006-1-2"
-  // startDate, _ := time.Parse(layout, "1900-01-01")
+
   endDate, _ := time.Parse(layout, params["endDate"])
 
   projBalance, err := models.ProjectedBalance(endDate)
@@ -41,7 +40,7 @@ func GetProjBalance(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func GetBalanceEntries(w http.ResponseWriter, req *http.Request) {
+func GetBudgetEntries(w http.ResponseWriter, req *http.Request) {
   params := mux.Vars(req)
   startDate, _ := time.Parse(layout, params["startDate"])
   endDate, _ := time.Parse(layout, params["endDate"])
