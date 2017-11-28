@@ -2,7 +2,6 @@ package models
 
 import (
   "time"
-  "database/sql"
   _ "github.com/lib/pq"
   "fmt"
   // "sync"
@@ -13,10 +12,10 @@ type Budget struct {
   Credit int `json:"credit"`
   Debit int `json:"debit"`
   Trans_date time.Time `json:"trans_date"`
+  Store_name string `json:"store_name"`
+  Category_name string `json:"category_name"`
   Store_id int `json:"store_id"`
-  User_id sql.NullInt64 `json:"user_id"`
   Category_id int `json:"category_id"`
-  Store_name string `json:"store_name,omitempty"`
 }
 
 type Balance struct {
@@ -27,7 +26,9 @@ type Balance struct {
 func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
   // now := time.Now()
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
-  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, b.store_id, b.user_id, b.category_id, s.store_name FROM budget as b join store as s on b.store_id = s.id WHERE trans_date BETWEEN $1 AND $2`, startDate, endDate)
+  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id
+    FROM budget as b join store as s on b.store_id = s.id join category as c on b.category_id = c.id
+    WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date, b.id ASC`, startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return nil, err
@@ -37,7 +38,7 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
   var budgetEntries []Budget
   for rows.Next() {
     var budgetRow Budget
-    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_id, &budgetRow.User_id, &budgetRow.Category_id, &budgetRow.Store_name)
+    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
     if err != nil {
       fmt.Println("error scaning", err)
       return nil, err
@@ -52,14 +53,14 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Budget, error) {
   return budgetEntries, nil
 }
 
-func BudgetEntry(id int) (budget Budget, err error) {
-  err = db.QueryRow("SELECT * FROM budget WHERE id = $1", id).Scan(&budget.Id, &budget.Credit, &budget.Debit, &budget.Trans_date, &budget.Store_id, &budget.User_id, &budget.Category_id)
-  if err != nil {
-    fmt.Println(err)
-    return Budget{}, err
-  }
-  return budget, nil
-}
+// func BudgetEntry(id int) (budget Budget, err error) {
+//   err = db.QueryRow("SELECT * FROM budget WHERE id = $1", id).Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
+//   if err != nil {
+//     fmt.Println(err)
+//     return Budget{}, err
+//   }
+//   return budget, nil
+// }
 func BudgetTotal(t time.Time) (balance int, err error) {
 
   rows, err := db.Query("SELECT SUM(credit - debit) as balance FROM budget where trans_date <= $1", t)
@@ -93,7 +94,7 @@ func GetBudgetBalance(startDate time.Time, endDate time.Time, c chan Balance) {
 
 func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
   var balance int
-  err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date > $1 AND trans_date < $2", startDate, endDate).Scan(&balance)
+  err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date BETWEEN $1 AND $2", startDate, endDate).Scan(&balance)
   if err != nil {
     fmt.Println(err)
     c <- Balance{0, err}
@@ -120,7 +121,18 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
   // only include ledger entries through the previous pay period. Otherwise include all entries
   // until the provided end date. The first parament is just a dummy date used to get the entire ledger balance.
   if endDate.Before(currentPayPeriod(time.Now())) {
-    go GetLedgerBalance(beginningOfTime(), prevPayDate(time.Now()), c)
+    // adjust date for ledger entry in order to not count pay dates twice.
+    // This is necessary in order to reuse the GetLedgerBalance and getBudgetBalance
+    // The sql stmt used is BETWEEN which is why dates need to be adjusted
+    pd := time.Now()
+    pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, time.UTC) // ledger range should end on 14th of this month
+    firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, time.UTC)
+    lastOfPrevMonth := firstOfMonth.AddDate(0, 0, -1) // ledger range should be until end of last month
+    if currentPayPeriod(time.Now()).Day() == 1 {
+      go GetLedgerBalance(beginningOfTime(), pd, c)
+    } else {
+      go GetLedgerBalance(beginningOfTime(), lastOfPrevMonth, c)
+    }
   }else {
     go GetLedgerBalance(beginningOfTime(), endDate, c)
   }
