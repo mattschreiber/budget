@@ -142,7 +142,7 @@ type TotalAmounts struct {
   BudgetAmount int `json:"budgetamount"`
 }
 // This is a function that will return both the ledger and budget totals for a given time period
-func GetSpending(startDate time.Time, endDate time.Time) (total TotalAmounts, err error) {
+func GetAmountSpent(startDate time.Time, endDate time.Time) (total TotalAmounts, err error) {
 
   c1 := make(chan Balance) // channel for Balance amount and error handling
   c2 := make(chan Balance) // channel for Balance amount and error handling

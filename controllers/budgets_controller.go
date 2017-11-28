@@ -48,3 +48,17 @@ func GetBudgetEntries(w http.ResponseWriter, req *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(budgetEntries)
 }
+
+func GetBalances(w http.ResponseWriter, req *http.Request) {
+  params := mux.Vars(req)
+  startDate, _ := time.Parse(layout, params["startDate"])
+  endDate, _ := time.Parse(layout, params["endDate"])
+  balances, err := models.GetAmountSpent(startDate, endDate)
+  if err != nil {
+    fmt.Println("Error get balances: ", err)
+    http.Error(w, err.Error(), http.StatusBadRequest)
+    return
+  }
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode(balances)
+}
