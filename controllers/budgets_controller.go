@@ -25,7 +25,6 @@ func GetProjBalance(w http.ResponseWriter, req *http.Request) {
 		// User is not logged in
 	}
   params := mux.Vars(req)
-
   endDate, _ := time.Parse(layout, params["endDate"])
 
   projBalance, err := models.ProjectedBalance(endDate)
