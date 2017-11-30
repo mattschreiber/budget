@@ -9,7 +9,8 @@ type Category struct {
   Category_name string `json:"category_name"`
 }
 
-func AllCategories() ([]Category, error) {
+// A function that returns a slice containing every category fromt
+func GetAllCategories() ([]Category, error) {
   rows, err := db.Query("SELECT c.id, c.category_name FROM category as c order by c.category_name")
   if err != nil {
     fmt.Println(err)

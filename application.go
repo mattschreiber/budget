@@ -43,6 +43,7 @@ func main() {
   r.HandleFunc("/budget-entries/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetBudgetEntries)).Methods("GET", "OPTIONS")
   r.HandleFunc("/ledger-entries/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetLedgerEntries)).Methods("GET", "OPTIONS")
   r.HandleFunc("/balances/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetBalances)).Methods("GET", "OPTIONS")
+  r.HandleFunc("/store-category", middlewares.ValidateToken(controllers.GetStoreCategory)).Methods("GET", "OPTIONS")
   http.Handle("/", &MyServer{r})
   log.Fatal(http.ListenAndServe(":5000", nil))
 }

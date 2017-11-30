@@ -43,3 +43,13 @@ func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
 
   return ledgerEntries, nil
 }
+
+func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
+  var balance int
+  err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date BETWEEN $1 AND $2", startDate, endDate).Scan(&balance)
+  if err != nil {
+    fmt.Println(err)
+    c <- Balance{0, err}
+  }
+  c <- Balance{balance, nil}
+}
