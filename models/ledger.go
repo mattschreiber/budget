@@ -58,6 +58,7 @@ func CreateLedgerEntry(ledger Model) (id int, err error) {
   err = db.QueryRow("INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
         ledger.Credit, ledger.Debit, ledger.Trans_date, ledger.St.Id, ledger.Cat.Id).Scan(&id)
   if err != nil {
+    fmt.Println(err)
     return -1, err
   }
   return id, nil
