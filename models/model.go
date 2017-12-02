@@ -100,8 +100,16 @@ func GetStoreCategory() (StoreCat, error){
   // c1 := make(chan []Category) // channel for Balance amount and error handling
   // c2 := make(chan []Store) // channel for Balance amount and error handling
   var storeCat StoreCat
-  storeCat.Cat, _ =  GetAllCategories()
-  storeCat.St, _ = GetAllStores()
+  var err error
+  storeCat.Cat, err =  GetAllCategories()
+  if err != nil {
+    return storeCat, err
+  }
+  var err1 error
+  storeCat.St, err1 = GetAllStores()
+  if err1 != nil {
+    return storeCat, err1
+  }
   // go GetAllStores(c2)
 
   // for i := 0; i < 2; i++ {

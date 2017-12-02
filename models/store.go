@@ -7,11 +7,13 @@ import (
 type Store struct {
   Id int `json:"id"`
   Store_name string `json:"store_name"`
+  Default_credit int `json:"default_credit"`
+  Default_debit int `json:"default_debit"`
 }
 
 // a function that returns a slice containing all stores from the store table
 func GetAllStores() ([]Store, error) {
-  rows, err := db.Query("SELECT s.id, s.store_name FROM store as s order by s.store_name")
+  rows, err := db.Query("SELECT s.id, s.store_name, s.default_credit, s.default_debit FROM store as s order by s.store_name")
   if err != nil {
     fmt.Println(err)
     return nil, err
@@ -21,7 +23,7 @@ func GetAllStores() ([]Store, error) {
   var stores []Store
   for rows.Next() {
     var store Store
-    err := rows.Scan(&store.Id, &store.Store_name)
+    err := rows.Scan(&store.Id, &store.Store_name, &store.Default_credit, &store.Default_debit)
     if err != nil {
       return nil, err
     }

@@ -53,3 +53,12 @@ func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
   }
   c <- Balance{balance, nil}
 }
+
+func CreateLedgerEntry(ledger Model) (id int, err error) {
+  err = db.QueryRow("INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
+        ledger.Credit, ledger.Debit, ledger.Trans_date, ledger.St.Id, ledger.Cat.Id).Scan(&id)
+  if err != nil {
+    return -1, err
+  }
+  return id, nil
+}
