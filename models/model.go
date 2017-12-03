@@ -58,23 +58,23 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 
   // If the end date provided is after the current pay period then find all budget entries starting with the
   // the beginning of the next pay period and ending on the user provided end date
-  if endDate.After(currentPayPeriod(time.Now())) {
-    go GetBudgetBalance(currentPayPeriod(time.Now()), endDate, c)
+  if endDate.After(currentPayPeriod(time.Now().Local())) {
+    go GetBudgetBalance(currentPayPeriod(time.Now().Local()), endDate, c)
   }else {
-    go GetBudgetBalance(prevPayDate(time.Now()), endDate, c)
+    go GetBudgetBalance(prevPayDate(time.Now().Local()), endDate, c)
   }
   // If the end date for the projection time period is before the current pay period ends then
   // only include ledger entries through the previous pay period. Otherwise include all entries
   // until the provided end date. The first parament is just a dummy date used to get the entire ledger balance.
-  if endDate.Before(currentPayPeriod(time.Now())) {
+  if endDate.Before(currentPayPeriod(time.Now().Local())) {
     // adjust date for ledger entry in order to not count pay dates twice.
     // This is necessary in order to reuse the GetLedgerBalance and getBudgetBalance
     // The sql stmt used is BETWEEN which is why dates need to be adjusted
-    pd := time.Now()
+    pd := time.Now().Local()
     pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, time.UTC) // ledger range should end on 14th of this month
     firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, time.UTC)
     lastOfPrevMonth := firstOfMonth.AddDate(0, 0, -1) // ledger range should be until end of last month
-    if currentPayPeriod(time.Now()).Day() == 1 {
+    if currentPayPeriod(time.Now().Local()).Day() == 1 {
       go GetLedgerBalance(beginningOfTime(), pd, c)
     } else {
       go GetLedgerBalance(beginningOfTime(), lastOfPrevMonth, c)
@@ -133,8 +133,8 @@ func prevPayDate(today time.Time) (time.Time) {
     prevPayDate = middleOfMonth
   }else {
     currentYear, currentMonth, _ := today.Date()
-    currentLocation := today.Location()
-    firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+    // currentLocation := today.Location()
+    firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, time.UTC)
     // lastOfMonth := firstOfMonth.AddDate(0, 0, 0)
     prevPayDate = firstOfMonth
   }

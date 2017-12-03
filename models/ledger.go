@@ -46,11 +46,9 @@ func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
 }
 
 func CreateLedgerEntry(ledger Model) (id int, err error) {
-  // time.Date(today.Year(), today.Month(), 15, 0, 0, 0, 0, time.UTC)
-  ledger.Trans_date = time.Date(ledger.Trans_date.Year(), ledger.Trans_date.Month(), ledger.Trans_date.Day(),  0, 0, 0, 0, time.UTC)
-  fmt.Println(ledger.Trans_date)
+  // only care about date so set time to 0
   err = db.QueryRow("INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
-        ledger.Credit, ledger.Debit, ledger.Trans_date, ledger.St.Id, ledger.Cat.Id).Scan(&id)
+        ledger.Credit, ledger.Debit, ledger.Trans_date.Local(), ledger.St.Id, ledger.Cat.Id).Scan(&id)
   if err != nil {
     fmt.Println(err)
     return -1, err
