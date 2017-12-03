@@ -6,21 +6,12 @@ import (
   // "sync"
 )
 
-// type Ledger struct {
-//   Id int `json:"id"`
-//   Credit int `json:"credit"`
-//   Debit int `json:"debit"`
-//   Trans_date time.Time `json:"trans_date"`
-//   Store_name string `json:"store_name"`
-//   Store_id int `json:"store_id"`
-// }
-
 func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   // now := time.Now()
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
   rows, err := db.Query(`SELECT l.id, l.credit, l.debit, l.trans_date, s.store_name, c.category_name, l.store_id, l.category_id
     FROM ledger as l join store as s on l.store_id = s.id join category as c on l.category_id = c.id
-    WHERE trans_date  BETWEEN $1 AND $2 ORDER BY l.trans_date, l.id ASC`, startDate, endDate)
+    WHERE trans_date  BETWEEN $1 AND $2 ORDER BY l.trans_date DESC`, startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return nil, err
@@ -55,6 +46,9 @@ func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
 }
 
 func CreateLedgerEntry(ledger Model) (id int, err error) {
+  // time.Date(today.Year(), today.Month(), 15, 0, 0, 0, 0, time.UTC)
+  ledger.Trans_date = time.Date(ledger.Trans_date.Year(), ledger.Trans_date.Month(), ledger.Trans_date.Day(),  0, 0, 0, 0, time.UTC)
+  fmt.Println(ledger.Trans_date)
   err = db.QueryRow("INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
         ledger.Credit, ledger.Debit, ledger.Trans_date, ledger.St.Id, ledger.Cat.Id).Scan(&id)
   if err != nil {
