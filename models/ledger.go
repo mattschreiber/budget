@@ -11,7 +11,7 @@ func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
   rows, err := db.Query(`SELECT l.id, l.credit, l.debit, l.trans_date, s.store_name, c.category_name, l.store_id, l.category_id
     FROM ledger as l join store as s on l.store_id = s.id join category as c on l.category_id = c.id
-    WHERE trans_date  BETWEEN $1 AND $2 ORDER BY l.trans_date DESC`, startDate, endDate)
+    WHERE trans_date  BETWEEN $1 AND $2 ORDER BY l.trans_date DESC, id DESC`, startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return nil, err
@@ -48,7 +48,7 @@ func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
 func CreateLedgerEntry(ledger Model) (id int, err error) {
   // only care about date so set time to 0
   err = db.QueryRow("INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
-        ledger.Credit, ledger.Debit, ledger.Trans_date.Local(), ledger.St.Id, ledger.Cat.Id).Scan(&id)
+        ledger.Credit, ledger.Debit, ledger.Trans_date.In(getEst()), ledger.St.Id, ledger.Cat.Id).Scan(&id)
   if err != nil {
     fmt.Println(err)
     return -1, err

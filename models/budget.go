@@ -12,7 +12,7 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
   rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id
     FROM budget as b join store as s on b.store_id = s.id join category as c on b.category_id = c.id
-    WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date, b.id ASC`, startDate, endDate)
+    WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date DESC, id DESC`, startDate, endDate)
   if err != nil {
     fmt.Println(err)
     return nil, err

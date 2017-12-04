@@ -2,6 +2,7 @@ package models
 
 import (
   "time"
+  "fmt"
 )
 // Generic model for describing a budget or ledger
 type Model struct {
@@ -26,6 +27,14 @@ type TotalAmounts struct {
 type StoreCat struct {
   Cat []Category `json:"category"`
   St []Store `json:"store"`
+}
+
+func getEst() (*time.Location) {
+    utc, err := time.LoadLocation("America/New_York")
+    if err != nil {
+      fmt.Println(err)
+    }
+    return utc
 }
 // This is a function that will return both the ledger and budget totals for a given time period
 func GetAmountSpent(startDate time.Time, endDate time.Time) (total TotalAmounts, err error) {
@@ -58,23 +67,23 @@ func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
 
   // If the end date provided is after the current pay period then find all budget entries starting with the
   // the beginning of the next pay period and ending on the user provided end date
-  if endDate.After(currentPayPeriod(time.Now().Local())) {
-    go GetBudgetBalance(currentPayPeriod(time.Now().Local()), endDate, c)
+  if endDate.After(currentPayPeriod(time.Now().In(getEst()))) {
+    go GetBudgetBalance(currentPayPeriod(time.Now().In(getEst())), endDate, c)
   }else {
-    go GetBudgetBalance(prevPayDate(time.Now().Local()), endDate, c)
+    go GetBudgetBalance(prevPayDate(time.Now().In(getEst())), endDate, c)
   }
   // If the end date for the projection time period is before the current pay period ends then
   // only include ledger entries through the previous pay period. Otherwise include all entries
   // until the provided end date. The first parament is just a dummy date used to get the entire ledger balance.
-  if endDate.Before(currentPayPeriod(time.Now().Local())) {
+  if endDate.Before(currentPayPeriod(time.Now().In(getEst()))) {
     // adjust date for ledger entry in order to not count pay dates twice.
     // This is necessary in order to reuse the GetLedgerBalance and getBudgetBalance
     // The sql stmt used is BETWEEN which is why dates need to be adjusted
-    pd := time.Now().Local()
-    pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, time.UTC) // ledger range should end on 14th of this month
-    firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, time.UTC)
+    pd := time.Now().In(getEst())
+    pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, getEst()) // ledger range should end on 14th of this month
+    firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, getEst())
     lastOfPrevMonth := firstOfMonth.AddDate(0, 0, -1) // ledger range should be until end of last month
-    if currentPayPeriod(time.Now().Local()).Day() == 1 {
+    if currentPayPeriod(time.Now().In(getEst())).Day() == 1 {
       go GetLedgerBalance(beginningOfTime(), pd, c)
     } else {
       go GetLedgerBalance(beginningOfTime(), lastOfPrevMonth, c)
