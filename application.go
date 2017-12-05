@@ -44,6 +44,7 @@ func main() {
   r.HandleFunc("/budget-entries/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetBudgetEntries)).Methods("GET", "OPTIONS")
   r.HandleFunc("/ledger-entries/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetLedgerEntries)).Methods("GET", "OPTIONS")
   r.HandleFunc("/createledger", middlewares.ValidateToken(controllers.CreateLedgerEntry)).Methods("POST", "OPTIONS")
+  r.HandleFunc("/createbudget", middlewares.ValidateToken(controllers.CreateBudgetEntry)).Methods("POST", "OPTIONS")
   r.HandleFunc("/balances/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetBalances)).Methods("GET", "OPTIONS")
   r.HandleFunc("/store-category", middlewares.ValidateToken(controllers.GetStoreCategory)).Methods("GET", "OPTIONS")
   http.Handle("/", &MyServer{r})

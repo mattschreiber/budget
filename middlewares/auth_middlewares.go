@@ -13,29 +13,20 @@ package middlewares
 //
 
 import (
+  "budget/models"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
   "context"
-	"strings"
+	// "strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
+  "golang.org/x/crypto/bcrypt"
 )
 
-// const (
-// 	// For simplicity these files are in the same folder as the app binary.
-// 	// You shouldn't do this in production.
-// 	privKeyPath = "app.rsa"
-// 	pubKeyPath  = "app.rsa.pub"
-// )
-
-// var (
-// 	verifyKey *rsa.PublicKey
-// 	signKey   *rsa.PrivateKey
-// )
 
 func fatal(err error) {
 	if err != nil {
@@ -46,19 +37,6 @@ func fatal(err error) {
 type TokenContextKey struct {
   Name string
 }
-
-type UserCredentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-// type User struct {
-// 	ID       int    `json:"id"`
-// 	Name     string `json:"name"`
-// 	Username string `json:"username"`
-// 	Password string `json:"password"`
-// }
-
 
 type Token struct {
 	Token string `json:"token"`
@@ -75,52 +53,77 @@ type Exception struct {
     Message string `json:"message"`
 }
 
-
+// Checks user credentials and if valid issues a new jwt token
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
-	var user UserCredentials
-
+	var user models.UserCredentials
+  // get user credentials from the body of http request
 	err := json.NewDecoder(r.Body).Decode(&user)
-
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Error in request")
 		return
 	}
-	if strings.ToLower(user.Username) != "someone" {
-		if user.Password != "p@ssword" {
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Println("Error logging in")
-			fmt.Fprint(w, "Invalid credentials")
-			return
-		}
+
+  // query db for username and password information
+  var passwordHash string
+  passwordHash, err = models.VerifyLogin(user)
+  if err != nil {
+    w.WriteHeader(http.StatusForbidden)
+    fmt.Fprint(w, "Invalid Username or Password")
     return
-	}
+  }
+  // verify password is correct 
+  err = checkPasswordHash(passwordHash, user.Password)
+  if err != nil {
+    w.WriteHeader(http.StatusForbidden)
+    fmt.Fprint(w, "Invalid credentials")
+    return
+  }
 
+  response, err := generateToken(user)
+  if err != nil {
+    // http.Error(w, err.Error(), http.StatusInternalServerError)
+    w.WriteHeader(http.StatusForbidden)
+    fmt.Fprint(w, "Unable to generate Token")
+    return
+  }
+  json, err := json.Marshal(response)
+  if err != nil {
+    // http.Error(w, err.Error(), http.StatusInternalServerError)
+    w.WriteHeader(http.StatusForbidden)
+    fmt.Fprint(w, "Unable to marshal token to json")
+    return
+  }
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(json)
+}
 
+func checkPasswordHash(passwordHash, password string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+  if err != nil {
+    return err
+  }
+	return nil
+}
+
+func generateToken(user models.UserCredentials) (map[string]string, error) {
   // Set custom claims
-	claims := &JwtCustomClaims{
-		user.Username,
-		true,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 720).Unix(),
-		},
-	}
+  claims := &JwtCustomClaims{
+    user.Username,
+    true,
+    jwt.StandardClaims{
+      ExpiresAt: time.Now().Add(time.Hour * 720).Unix(),
+    },
+  }
 
   token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
   t, err := token.SignedString([]byte("secret"))
-	if err != nil {
-		fatal(err)
-	}
-  response := map[string]string{"token": t}
-  json, err := json.Marshal(response)
   if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
-
+    return map[string]string{}, err
+  }
+  response := map[string]string{"token": t}
+  return response, err
 }
 
 func ValidateToken(next http.HandlerFunc) http.HandlerFunc {

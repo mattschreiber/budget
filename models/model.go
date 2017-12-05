@@ -119,16 +119,6 @@ func GetStoreCategory() (StoreCat, error){
   if err1 != nil {
     return storeCat, err1
   }
-  // go GetAllStores(c2)
-
-  // for i := 0; i < 2; i++ {
-  //   select {
-  //   case categories := <-c1:
-  //     StoreCat.Cat = categories
-  //   case stores := <-c2:
-  //     StoreCat.St = stores
-  //   }
-  // }
   return storeCat, nil
 }
 

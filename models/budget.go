@@ -77,6 +77,17 @@ func GetBudgetBalance(startDate time.Time, endDate time.Time, c chan Balance) {
   c <- Balance{balance, nil}
 }
 
+func CreateBudgetEntry(budget Model) (id int, err error) {
+  // only care about date so set time to 0
+  err = db.QueryRow("INSERT INTO budget (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
+        budget.Credit, budget.Debit, budget.Trans_date.In(getEst()), budget.St.Id, budget.Cat.Id).Scan(&id)
+  if err != nil {
+    fmt.Println(err)
+    return -1, err
+  }
+  return id, nil
+}
+
 
   // //sql statements that will be called concurrently to get budget and ledger balances
   // budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date >= $1"
