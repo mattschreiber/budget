@@ -9,7 +9,6 @@ import (
 
 func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
   // now := time.Now()
-  // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
   rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id
     FROM budget as b join store as s on b.store_id = s.id join category as c on b.category_id = c.id
     WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date DESC, id DESC`, startDate, endDate)
@@ -25,16 +24,15 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
     // err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
     err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.St.Store_name, &budgetRow.Cat.Category_name, &budgetRow.St.Id, &budgetRow.Cat.Id)
     if err != nil {
-      fmt.Println("error scaning", err)
+      fmt.Println("error scaninng", err)
       return nil, err
     }
     budgetEntries = append(budgetEntries, budgetRow)
   }
   if err = rows.Err(); err != nil {
-    fmt.Println(err)
+    fmt.Println("error scanning a row", err)
    return nil, err
   }
-
   return budgetEntries, nil
 }
 
