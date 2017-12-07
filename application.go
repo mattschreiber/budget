@@ -1,11 +1,11 @@
 package main
 
 import (
-  "encoding/json"
+  // "encoding/json"
   "budget/models"
   // "fmt"
-  "time"
-  "os"
+  // "time"
+  // "os"
   "log"
   "net/http"
 
@@ -16,27 +16,6 @@ import (
 
 func main() {
   models.InitDB()
-
-  // budgetTotal, err := models.BudgetTotal(time.Now())
-  // if err != nil {
-  //   fmt.Println(err)
-  //   return
-  // }
-  // fmt.Printf("Balance: %d\n", budgetTotal)
-
-  enc1 := json.NewEncoder(os.Stdout)
-  // budgetEntry, _ := models.BudgetEntry(1)
-  // enc1.Encode(budgetEntry)
-  // fmt.Println(budgetEntry)
-  beginningOfTime := time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
-  endOfTime := time.Date(2200, 1, 1, 0, 0, 0, 0, time.UTC)
-
-  amounts, _ := models.GetAmountSpent(beginningOfTime, endOfTime)
-  enc1.Encode(amounts)
-  // categories, _ := models.AllCategories()
-  // for _, v := range categories {
-  //   fmt.Printf("%d, %s\n", v.Id, v.Category_name)
-  // }
 
   r := mux.NewRouter()
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
