@@ -14,7 +14,12 @@ func GetLedgerEntries(w http.ResponseWriter, req *http.Request) {
   params := mux.Vars(req)
   startDate, _ := time.Parse(layout, params["startDate"])
   endDate, _ := time.Parse(layout, params["endDate"])
-  ledgerEntries, _ := models.AllLedgerEntries(startDate, endDate)
+  ledgerEntries, err := models.AllLedgerEntries(startDate, endDate)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "Error in request")
+		return
+  }
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(ledgerEntries)
 }
@@ -32,4 +37,18 @@ func CreateLedgerEntry(w http.ResponseWriter, req *http.Request){
   id["id"], err = models.CreateLedgerEntry(ledger)
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(id)
+}
+
+func DeleteLedgerEntry(w http.ResponseWriter, req *http.Request) {
+  params := mux.Vars(req)
+  id := params["id"]
+  count, err := models.DeleteLedgerEntry(id)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    fmt.Fprint(w, "Error in request")
+    return
+  }
+  deletedId := map[string]int64 {"count": count }
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode(deletedId)
 }

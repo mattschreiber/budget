@@ -55,3 +55,16 @@ func CreateLedgerEntry(ledger Model) (id int, err error) {
   }
   return id, nil
 }
+
+func DeleteLedgerEntry(id string) (count int64, err error) {
+  deleteEntryStmt := "DELETE FROM ledger where id = $1"
+  res, err := db.Exec(deleteEntryStmt, id)
+  if err != nil {
+    return -1, err
+  }
+  count, err = res.RowsAffected()
+  if err != nil {
+    return -1, err
+  }
+  return count, nil
+}

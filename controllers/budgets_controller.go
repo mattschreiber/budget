@@ -87,3 +87,17 @@ func CreateBudgetEntry(w http.ResponseWriter, req *http.Request){
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(id)
 }
+
+func DeleteBudgetEntry(w http.ResponseWriter, req *http.Request) {
+  params := mux.Vars(req)
+  id := params["id"]
+  count, err := models.DeleteBudgetEntry(id)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    fmt.Fprint(w, "Error in request")
+    return
+  }
+  deletedId := map[string]int64 {"count": count }
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode(deletedId)
+}

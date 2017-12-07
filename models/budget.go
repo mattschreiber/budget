@@ -86,6 +86,19 @@ func CreateBudgetEntry(budget Model) (id int, err error) {
   return id, nil
 }
 
+func DeleteBudgetEntry(id string) (count int64, err error) {
+  deleteEntryStmt := "DELETE FROM budget where id = $1"
+  res, err := db.Exec(deleteEntryStmt, id)
+  if err != nil {
+    return -1, err
+  }
+  count, err = res.RowsAffected()
+  if err != nil {
+    return -1, err
+  }
+  return count, nil
+}
+
 
   // //sql statements that will be called concurrently to get budget and ledger balances
   // budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date >= $1"
