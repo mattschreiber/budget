@@ -10,7 +10,8 @@ const (
   host = "localhost"
   port = 5432
   user = "postgres"
-  // password = "your-password"
+  // user = os.Getenv("AWS_DB_USER"))
+  // password = os.Getenv("AWS_MYBUDGET_DB_PW"))
   dbname = "budget_development"
 )
 var db *sql.DB
