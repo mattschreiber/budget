@@ -19,6 +19,7 @@ import (
 	"log"
 	"net/http"
   "context"
+  "os"
 	// "strings"
 	"time"
 
@@ -73,7 +74,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprint(w, "Invalid Username or Password")
     return
   }
-  // verify password is correct 
+  // verify password is correct
   err = checkPasswordHash(passwordHash, user.Password)
   if err != nil {
     w.WriteHeader(http.StatusForbidden)
@@ -118,7 +119,7 @@ func generateToken(user models.UserCredentials) (map[string]string, error) {
   }
 
   token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-  t, err := token.SignedString([]byte("secret"))
+  t, err := token.SignedString([]byte(os.Getenv("AWS_SIGNING_KEY")))
   if err != nil {
     return map[string]string{}, err
   }
@@ -127,7 +128,7 @@ func generateToken(user models.UserCredentials) (map[string]string, error) {
 }
 
 func ValidateToken(next http.HandlerFunc) http.HandlerFunc {
-  signingKey := []byte("secret")
+  signingKey := []byte(os.Getenv("AWS_SIGNING_KEY"))
   return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
     token, err := request.ParseFromRequestWithClaims(req, request.AuthorizationHeaderExtractor, &JwtCustomClaims{},
       func(token *jwt.Token) (interface{}, error) {
