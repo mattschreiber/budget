@@ -16,7 +16,7 @@ import (
 var db *sql.DB
 func InitDB() {
 
-  host := "mattdb.clf0wvbr9kqy.us-east-2.rds.amazonaws.com"
+  host := "aatmdstad6dti5.clf0wvbr9kqy.us-east-2.rds.amazonaws.com"
   port := 5432
   user := os.Getenv("AWS_DB_USER")
   password := os.Getenv("AWS_MYBUDGET_DB_PW")
