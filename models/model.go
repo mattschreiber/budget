@@ -65,38 +65,47 @@ func GetAmountSpent(startDate time.Time, endDate time.Time) (total TotalAmounts,
 // ProjectedBalance is a function that calculates the total budgeted balance at any given time.
 // The function accepts an ending date and returns the balance in cents as an integer
 // The projected balance is calculated by first finding the current actual ledger balance up through the end of the
-// previous pay period.
+// previous pay period which wil be the 14th or last day of month
 // The second step is to calculate the budgeted balance starting with the current pay period and up until a user provided end Date
+// The default is calulated using the currentPayPeriod and the end of the next pay period
 // The last step is to sum the ledger balance with the budget balance.
+// Example: today is 2017-12-15.
+// Ledger query between beginningOfTime and 2017-12-14
+// Budget query between 2017-12-15 and 2017-12-31
 func ProjectedBalance(endDate time.Time) (projBalance int, err error) {
   c := make(chan Balance) // channel for Balance amount and error handling
 
+  pd := time.Now().In(getEst())
+  pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, getEst()) // ledger range should end on 14th of this month
+  firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, getEst())
+  lastOfPrevMonth := firstOfMonth.AddDate(0, 0, -1) // ledger range should be until end of last month
+  lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+  // firstOfNextMonth := firstOfMonth.AddDate(0, 1, 0)
+
   // If the end date provided is after the current pay period then find all budget entries starting with the
   // the beginning of the next pay period and ending on the user provided end date
-  if endDate.After(currentPayPeriod(time.Now().In(getEst()))) {
+  if endDate.After(currentPayPeriod(time.Now().In(getEst()))) || endDate.Equal(currentPayPeriod(time.Now().In(getEst()))) {
     go GetBudgetBalance(currentPayPeriod(time.Now().In(getEst())), endDate, c)
   }else {
-    go GetBudgetBalance(prevPayDate(time.Now().In(getEst())), endDate, c)
+    if currentPayPeriod(time.Now().In(getEst())).Day() == 1 {
+      go GetBudgetBalance(prevPayDate(time.Now().In(getEst())), lastOfMonth, c)
+    } else {
+      go GetBudgetBalance(prevPayDate(time.Now().In(getEst())), pd, c)
+    }
   }
   // If the end date for the projection time period is before the current pay period ends then
   // only include ledger entries through the previous pay period. Otherwise include all entries
   // until the provided end date. The first parament is just a dummy date used to get the entire ledger balance.
   if endDate.Before(currentPayPeriod(time.Now().In(getEst()))) {
-    // adjust date for ledger entry in order to not count pay dates twice.
-    // This is necessary in order to reuse the GetLedgerBalance and getBudgetBalance
-    // The sql stmt used is BETWEEN which is why dates need to be adjusted
-    pd := time.Now().In(getEst())
-    pd = time.Date(pd.Year(), pd.Month(), 14, 0, 0, 0, 0, getEst()) // ledger range should end on 14th of this month
-    firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, getEst())
-    lastOfPrevMonth := firstOfMonth.AddDate(0, 0, -1) // ledger range should be until end of last month
     if currentPayPeriod(time.Now().In(getEst())).Day() == 1 {
       go GetLedgerBalance(beginningOfTime(), pd, c)
     } else {
       go GetLedgerBalance(beginningOfTime(), lastOfPrevMonth, c)
     }
   }else {
-    go GetLedgerBalance(beginningOfTime(), endDate, c)
+    go GetLedgerBalance(beginningOfTime(), currentPayPeriod(time.Now().In(getEst())).AddDate(0,0,-1), c)
   }
+
   budgetBal, ledgerBal := <-c, <-c // receive Balance struct from go routines
   //
   if budgetBal.Error != nil || ledgerBal.Error != nil {
@@ -138,9 +147,7 @@ func prevPayDate(today time.Time) (time.Time) {
     prevPayDate = middleOfMonth
   }else {
     currentYear, currentMonth, _ := today.Date()
-    // currentLocation := today.Location()
     firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, time.UTC)
-    // lastOfMonth := firstOfMonth.AddDate(0, 0, 0)
     prevPayDate = firstOfMonth
   }
   return prevPayDate

@@ -27,7 +27,7 @@ func main() {
   r.HandleFunc("/balances/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetBalances)).Methods("GET", "OPTIONS")
   r.HandleFunc("/store-category", middlewares.ValidateToken(controllers.GetStoreCategory)).Methods("GET", "OPTIONS")
   r.HandleFunc("/ledger-entry/{id}", middlewares.ValidateToken(controllers.DeleteLedgerEntry)).Methods("DELETE", "OPTIONS")
-    r.HandleFunc("/budget-entry/{id}", middlewares.ValidateToken(controllers.DeleteBudgetEntry)).Methods("DELETE", "OPTIONS")
+  r.HandleFunc("/budget-entry/{id}", middlewares.ValidateToken(controllers.DeleteBudgetEntry)).Methods("DELETE", "OPTIONS")
 
   http.Handle("/", &MyServer{r})
   log.Fatal(http.ListenAndServe(":5000", nil))
