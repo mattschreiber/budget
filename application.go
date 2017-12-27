@@ -28,6 +28,7 @@ func main() {
   r.HandleFunc("/store-category", middlewares.ValidateToken(controllers.GetStoreCategory)).Methods("GET", "OPTIONS")
   r.HandleFunc("/ledger-entry/{id}", middlewares.ValidateToken(controllers.DeleteLedgerEntry)).Methods("DELETE", "OPTIONS")
   r.HandleFunc("/budget-entry/{id}", middlewares.ValidateToken(controllers.DeleteBudgetEntry)).Methods("DELETE", "OPTIONS")
+  r.HandleFunc("/reports/categories/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetAmountsByCategory)).Methods("GET", "OPTIONS")
 
   http.Handle("/", &MyServer{r})
   log.Fatal(http.ListenAndServe(":5000", nil))
