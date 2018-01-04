@@ -4,7 +4,7 @@ import (
   "encoding/json"
   "budget/models"
   "fmt"
-  "time"
+  // "time"
   "net/http"
 
   "github.com/gorilla/mux"
@@ -12,10 +12,11 @@ import (
 
 func GetAmountsByCategory(w http.ResponseWriter, req *http.Request) {
   params := mux.Vars(req)
-  startDate, _ := time.Parse(layout, params["startDate"])
-  endDate, _ := time.Parse(layout, params["endDate"])
-
-  categoryAmounts, err := models.AmountsByCategory(startDate, endDate)
+  // startDate, _ := time.Parse(layout, params["startDate"])
+  // endDate, _ := time.Parse(layout, params["endDate"])
+  month := params["month"]
+  year := params["year"]
+  categoryAmounts, err := models.AmountsByCategory(month, year)
   if err != nil {
     w.WriteHeader(http.StatusBadRequest)
     fmt.Fprint(w, "Error in request")

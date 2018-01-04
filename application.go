@@ -17,6 +17,17 @@ import (
 func main() {
   models.InitDB()
 
+  // ticker := time.NewTicker(time.Second * 10)
+  //   go func() {
+  //       for t := range ticker.C {
+  //           fmt.Println("Tick at", t)
+  //       }
+  //   }()
+    //
+    // time.Sleep(time.Second * 60)
+    // ticker.Stop()
+    // fmt.Println("Ticker stopped")
+
   r := mux.NewRouter()
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
   r.HandleFunc("/projected-balance/{endDate}", middlewares.ValidateToken(controllers.GetProjBalance)).Methods("GET", "OPTIONS")
@@ -28,7 +39,7 @@ func main() {
   r.HandleFunc("/store-category", middlewares.ValidateToken(controllers.GetStoreCategory)).Methods("GET", "OPTIONS")
   r.HandleFunc("/ledger-entry/{id}", middlewares.ValidateToken(controllers.DeleteLedgerEntry)).Methods("DELETE", "OPTIONS")
   r.HandleFunc("/budget-entry/{id}", middlewares.ValidateToken(controllers.DeleteBudgetEntry)).Methods("DELETE", "OPTIONS")
-  r.HandleFunc("/reports/categories/{startDate}/{endDate}", middlewares.ValidateToken(controllers.GetAmountsByCategory)).Methods("GET", "OPTIONS")
+  r.HandleFunc("/reports/categories", middlewares.ValidateToken(controllers.GetAmountsByCategory)).Methods("GET", "OPTIONS").Queries("month", "{month}", "year", "{year}")
 
   http.Handle("/", &MyServer{r})
   log.Fatal(http.ListenAndServe(":5000", nil))
