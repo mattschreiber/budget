@@ -99,6 +99,36 @@ func DeleteBudgetEntry(id string) (count int64, err error) {
   return count, nil
 }
 
+func AutoPayBudgetEntries(today time.Time) ([]Model, error) {
+  // now := time.Now()
+  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.store_id, b.category_id
+    FROM budget as b join store as s on b.store_id = s.id
+    WHERE trans_date = $1
+    AND s.auto_pay = true`, today)
+  if err != nil {
+    fmt.Println(err)
+    return nil, err
+  }
+  defer rows.Close()
+
+  var budgetEntries []Model
+  for rows.Next() {
+    var budgetRow Model
+    // err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
+    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.St.Id, &budgetRow.Cat.Id)
+    if err != nil {
+      fmt.Println("error scaninng", err)
+      return nil, err
+    }
+    budgetEntries = append(budgetEntries, budgetRow)
+  }
+  if err = rows.Err(); err != nil {
+    fmt.Println("error scanning a row", err)
+   return nil, err
+  }
+  return budgetEntries, nil
+}
+
 
   // //sql statements that will be called concurrently to get budget and ledger balances
   // budgetStmt := "SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date >= $1"

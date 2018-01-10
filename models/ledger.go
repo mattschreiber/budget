@@ -3,6 +3,7 @@ package models
 import (
   "time"
   "fmt"
+  "database/sql"
   // "sync"
 )
 
@@ -67,4 +68,48 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
     return -1, err
   }
   return count, nil
+}
+
+func AutoPay() {
+
+  month := int(time.Now().Month())
+  year := time.Now().Year()
+  pd := time.Now()
+  // firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, getEst())
+  // lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
+  // find all budgetEntries with a trans_date of today
+  budgetEntries, err := AutoPayBudgetEntries(pd)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+  // if there are entries for today
+  if budgetEntries != nil {
+    //loop through todays entries, check if a corresponding entry exists on the ledger for current monthly
+    // and if no ledger entry, then create one
+    for _, entry := range budgetEntries {
+      var ledgerEntry Model
+      err = db.QueryRow(`SELECT id, store_id FROM ledger
+        WHERE extract(month from trans_date) = $1 AND extract(year from trans_date) = $2
+        AND ledger.store_id = $3`, month, year, entry.St.Id).Scan(&ledgerEntry.Id, &ledgerEntry.St.Id)
+      if err != nil {
+        if err == sql.ErrNoRows {
+          insertEntryStmt := "INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES ($1, $2, $3, $4, $5)"
+          res, err := db.Exec(insertEntryStmt, entry.Credit, entry.Debit, time.Now(), entry.St.Id, entry.Cat.Id)
+          if err != nil {
+            fmt.Println(err)
+          }
+          _, err = res.RowsAffected()
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          // This is good place to send build email to send with info on new ledger entries
+        } else {
+          fmt.Println(err)
+        }
+      }
+    }
+  }
 }
