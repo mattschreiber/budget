@@ -3,8 +3,8 @@ package main
 import (
   // "encoding/json"
   "budget/models"
-  // "fmt"
-  // "time"
+  "fmt"
+  "time"
   // "os"
   "log"
   "net/http"
@@ -17,16 +17,9 @@ import (
 func main() {
   models.InitDB()
 
-  // ticker := time.NewTicker(time.Second * 10)
-  //   go func() {
-  //       for t := range ticker.C {
-  //           fmt.Println("Tick at", t)
-  //       }
-  //   }()
-    //
-    // time.Sleep(time.Second * 60)
-    // ticker.Stop()
-    // fmt.Println("Ticker stopped")
+  models.AutoPay()
+
+  go scheduledTasks()
 
   r := mux.NewRouter()
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
@@ -62,4 +55,29 @@ func (s *MyServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
     }
     // Lets Gorilla work
     s.r.ServeHTTP(rw, req)
+}
+
+func scheduledTasks() {
+  t := time.Now()
+  n := time.Date(t.Year(), t.Month(), t.Day(), 3, 0, 0, 0, t.Location())
+
+  if t.After(n)  {
+    // run job immediately and then wait until 3am tomorrow
+    n = n.Add(24 * time.Hour)
+  }
+
+  d := n.Sub(t)
+  time.AfterFunc(d, tick)
+
+
+}
+
+func tick() {
+  ticker := time.NewTicker(time.Hour * 24)
+  // fmt.Println("first job", time.Now())
+    go func() {
+        for t := range ticker.C {
+          fmt.Println(t)
+        }
+    }()
 }
