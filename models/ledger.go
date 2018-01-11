@@ -90,9 +90,9 @@ func AutoPay() {
     // and if no ledger entry, then create one
     for _, entry := range budgetEntries {
       var ledgerEntry Model
-      err = db.QueryRow(`SELECT id, store_id FROM ledger
+      err = db.QueryRow(`SELECT id, store_id, category_id FROM ledger
         WHERE extract(month from trans_date) = $1 AND extract(year from trans_date) = $2
-        AND ledger.store_id = $3`, month, year, entry.St.Id).Scan(&ledgerEntry.Id, &ledgerEntry.St.Id)
+        AND ledger.store_id = $3 AND ledger.category_id = $4`, month, year, entry.St.Id, entry.Cat.Id).Scan(&ledgerEntry.Id, &ledgerEntry.St.Id, &ledgerEntry.Cat.Id)
       if err != nil {
         if err == sql.ErrNoRows {
           insertEntryStmt := "INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES ($1, $2, $3, $4, $5)"
