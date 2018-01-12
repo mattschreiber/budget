@@ -3,7 +3,9 @@ package models
 import (
   "time"
   "fmt"
+  // "bytes"
   "database/sql"
+  "budget/email"
   // "sync"
 )
 
@@ -69,8 +71,13 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
   }
   return count, nil
 }
-
+// this funcion checks for budget entries on a given day that are marked auto_pay for their store.
+// The method makes sure there isn't already an entry for the current month, creates the entry and then sends an
+// email with confirmation of the new entries
 func AutoPay() {
+
+  // var emailBody bytes.Buffer
+  var countNewEntries int
 
   month := int(time.Now().Month())
   year := time.Now().Year()
@@ -90,7 +97,7 @@ func AutoPay() {
     // and if no ledger entry, then create one
     for _, entry := range budgetEntries {
       var ledgerEntry Model
-      err = db.QueryRow(`SELECT id, store_id, category_id FROM ledger
+      err = db.QueryRow(`SELECT ledger.id, ledger.store_id, ledger.category_id FROM ledger
         WHERE extract(month from trans_date) = $1 AND extract(year from trans_date) = $2
         AND ledger.store_id = $3 AND ledger.category_id = $4`, month, year, entry.St.Id, entry.Cat.Id).Scan(&ledgerEntry.Id, &ledgerEntry.St.Id, &ledgerEntry.Cat.Id)
       if err != nil {
@@ -105,11 +112,14 @@ func AutoPay() {
             fmt.Println(err)
             return
           }
-          // This is good place to send build email to send with info on new ledger entries
+          // create message body for email
+          // emailBody.WriteString(fmt.Sprintf("Created New Entry: Store Name %s, Credit Amount $%d,  Debit Amount = $%d ", entry.Credit, entry.Debit))
+          countNewEntries += 1
         } else {
           fmt.Println(err)
         }
       }
     }
+    email.SendMail(fmt.Sprintf("Created %d new entries", countNewEntries))
   }
 }
