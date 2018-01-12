@@ -77,6 +77,7 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
 func AutoPay() {
 
   // var emailBody bytes.Buffer
+
   var countNewEntries int
 
   month := int(time.Now().Month())
@@ -120,6 +121,13 @@ func AutoPay() {
         }
       }
     }
-    email.SendMail(fmt.Sprintf("Created %d new entries", countNewEntries))
+    // send email
+
+      mail := email.Mail{}
+      mail.SenderId = "matt.schreiber01@gmail.com"
+      mail.ToIds = []string{"matt.schreiber01@gmail.com"}
+      mail.Subject = "New Ledger Entries"
+      mail.Body = fmt.Sprintf("Created %d new entries", countNewEntries)
+      mail.SendMail()
   }
 }

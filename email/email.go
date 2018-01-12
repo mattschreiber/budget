@@ -9,10 +9,10 @@ import (
 )
 
 type Mail struct {
-	senderId string
-	toIds    []string
-	subject  string
-	body     string
+	SenderId string
+	ToIds    []string
+	Subject  string
+	Body     string
 }
 
 type SmtpServer struct {
@@ -27,31 +27,31 @@ func (s *SmtpServer) ServerName() string {
 
 func (mail *Mail) BuildMessage() string {
 	message := ""
-	message += fmt.Sprintf("From: %s\r\n", mail.senderId)
-	if len(mail.toIds) > 0 {
-		message += fmt.Sprintf("To: %s\r\n", strings.Join(mail.toIds, ";"))
+	message += fmt.Sprintf("From: %s\r\n", mail.SenderId)
+	if len(mail.ToIds) > 0 {
+		message += fmt.Sprintf("To: %s\r\n", strings.Join(mail.ToIds, ";"))
 	}
 
-	message += fmt.Sprintf("Subject: %s\r\n", mail.subject)
-	message += "\r\n" + mail.body
+	message += fmt.Sprintf("Subject: %s\r\n", mail.Subject)
+	message += "\r\n" + mail.Body
 
 	return message
 }
 
-func SendMail(body string) {
+func (mail *Mail) SendMail() {
 
-  mail := Mail{}
-	mail.senderId = "matt.schreiber01@gmail.com"
-	mail.toIds = []string{"matt.schreiber01@gmail.com"}
-	mail.subject = "New Ledger Entries"
-	mail.body = body
+  // mail := Mail{}
+	// mail.senderId = "matt.schreiber01@gmail.com"
+	// mail.toIds = []string{"matt.schreiber01@gmail.com"}
+	// mail.subject = "New Ledger Entries"
+	// mail.body = body
 
 	messageBody := mail.BuildMessage()
 
 	smtpServer := SmtpServer{host: "smtp.gmail.com", port: "465"}
 
 	//build an auth
-	auth := smtp.PlainAuth("", mail.senderId, "ozxydsyxozpzihzj", smtpServer.host)
+	auth := smtp.PlainAuth("", mail.SenderId, "ozxydsyxozpzihzj", smtpServer.host)
 
 	// Gmail will reject connection if it's not secure
 	// TLS config
@@ -76,10 +76,10 @@ func SendMail(body string) {
 	}
 
 	// step 2: add all from and to
-	if err = client.Mail(mail.senderId); err != nil {
+	if err = client.Mail(mail.SenderId); err != nil {
 		log.Println(err)
 	}
-	for _, k := range mail.toIds {
+	for _, k := range mail.ToIds {
 		if err = client.Rcpt(k); err != nil {
 			log.Println(err)
 		}
