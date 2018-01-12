@@ -1,4 +1,4 @@
-FROM golang:1.8.1
+FROM golang:1.9.2
 ADD . /go/src/budget
 RUN go get github.com/gorilla/mux
 RUN go get github.com/dgrijalva/jwt-go
