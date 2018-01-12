@@ -1,6 +1,7 @@
 package email
 
 import (
+  "os"
   "fmt"
   "crypto/tls"
   "log"
@@ -51,7 +52,7 @@ func (mail *Mail) SendMail() {
 	smtpServer := SmtpServer{host: "smtp.gmail.com", port: "465"}
 
 	//build an auth
-	auth := smtp.PlainAuth("", mail.SenderId, "ozxydsyxozpzihzj", smtpServer.host)
+	auth := smtp.PlainAuth("", mail.SenderId, os.Getenv("GMAIL_PASSWORD"), smtpServer.host)
 
 	// Gmail will reject connection if it's not secure
 	// TLS config
