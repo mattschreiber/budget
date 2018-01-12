@@ -3,8 +3,8 @@ package main
 import (
   // "encoding/json"
   "budget/models"
-  "fmt"
-  "time"
+  // "fmt"
+  // "time"
   // "os"
   "log"
   "net/http"
@@ -12,14 +12,13 @@ import (
   "github.com/gorilla/mux"
   "budget/middlewares"
   "budget/controllers"
+  "budget/tasks"
 )
 
 func main() {
   models.InitDB()
 
-  models.AutoPay()
-
-  go scheduledTasks()
+  go tasks.ScheduledTasks()
 
   r := mux.NewRouter()
   r.HandleFunc("/login", middlewares.LoginHandler).Methods("POST")
@@ -55,29 +54,4 @@ func (s *MyServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
     }
     // Lets Gorilla work
     s.r.ServeHTTP(rw, req)
-}
-
-func scheduledTasks() {
-  t := time.Now()
-  n := time.Date(t.Year(), t.Month(), t.Day(), 3, 0, 0, 0, t.Location())
-
-  if t.After(n)  {
-    // run job immediately and then wait until 3am tomorrow
-    n = n.Add(24 * time.Hour)
-  }
-
-  d := n.Sub(t)
-  time.AfterFunc(d, tick)
-
-
-}
-
-func tick() {
-  ticker := time.NewTicker(time.Hour * 24)
-  // fmt.Println("first job", time.Now())
-    go func() {
-        for t := range ticker.C {
-          fmt.Println(t)
-        }
-    }()
 }
