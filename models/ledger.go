@@ -9,6 +9,11 @@ import (
   // "sync"
 )
 
+type autoPay struct {
+  count int
+  numTimes int
+}
+
 func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   // now := time.Now()
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
@@ -83,8 +88,6 @@ func AutoPay() {
   month := int(time.Now().Month())
   year := time.Now().Year()
   pd := time.Now()
-  // firstOfMonth := time.Date(pd.Year(), pd.Month(), 1, 0, 0, 0, 0, getEst())
-  // lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 
   // find all budgetEntries with a trans_date of today
   budgetEntries, err := AutoPayBudgetEntries(pd)
@@ -97,28 +100,34 @@ func AutoPay() {
     //loop through todays entries, check if a corresponding entry exists on the ledger for current monthly
     // and if no ledger entry, then create one
     for _, entry := range budgetEntries {
-      var ledgerEntry Model
-      err = db.QueryRow(`SELECT ledger.id, ledger.store_id, ledger.category_id FROM ledger
+      // autoPay type used to determine how many times an entry should show up for a given month
+      var autopay autoPay
+      err = db.QueryRow(`SELECT COUNT(*), store.auto_pay_num FROM ledger JOIN store ON ledger.store_id = store.id
         WHERE extract(month from trans_date) = $1 AND extract(year from trans_date) = $2
-        AND ledger.store_id = $3 AND ledger.category_id = $4`, month, year, entry.St.Id, entry.Cat.Id).Scan(&ledgerEntry.Id, &ledgerEntry.St.Id, &ledgerEntry.Cat.Id)
+        AND ledger.store_id = $3 AND ledger.category_id = $4
+        GROUP BY store.auto_pay_num`, month, year, entry.St.Id, entry.Cat.Id).Scan(&autopay.count, &autopay.numTimes)
       if err != nil {
         if err == sql.ErrNoRows {
-          insertEntryStmt := "INSERT INTO ledger (credit, debit, trans_date, store_id, category_id) VALUES ($1, $2, $3, $4, $5)"
-          res, err := db.Exec(insertEntryStmt, entry.Credit, entry.Debit, time.Now(), entry.St.Id, entry.Cat.Id)
-          if err != nil {
-            fmt.Println(err)
-          }
-          _, err = res.RowsAffected()
+          entry.Trans_date = time.Now()
+          _, err = CreateLedgerEntry(entry)
           if err != nil {
             fmt.Println(err)
             return
           }
-          // create message body for email
-          // emailBody.WriteString(fmt.Sprintf("Created New Entry: Store Name %s, Credit Amount $%d,  Debit Amount = $%d ", entry.Credit, entry.Debit))
           countNewEntries += 1
         } else {
           fmt.Println(err)
+          return
         }
+      }
+      if autopay.count < autopay.numTimes {
+        entry.Trans_date = time.Now()
+        _, err = CreateLedgerEntry(entry)
+        if err != nil {
+          fmt.Println(err)
+          return
+        }
+        countNewEntries += 1
       }
     }
   }
