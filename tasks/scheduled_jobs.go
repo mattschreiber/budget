@@ -6,6 +6,8 @@ import (
   "budget/models"
 )
 
+//models.AutoPay() is found in models/ledger.go
+
 func ScheduledTasks() {
 
   t := time.Now()
