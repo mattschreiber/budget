@@ -6,6 +6,7 @@ import (
   // "bytes"
   "database/sql"
   "budget/email"
+  "budget/utilities"
   // "sync"
 )
 
@@ -13,6 +14,8 @@ type autoPay struct {
   count int
   numTimes int
 }
+
+var defaultDate = utilities.InitDates()
 
 func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   // now := time.Now()
@@ -85,12 +88,8 @@ func AutoPay() {
 
   var countNewEntries int
 
-  month := int(time.Now().Month())
-  year := time.Now().Year()
-  pd := time.Now()
-
   // find all budgetEntries with a trans_date of today
-  budgetEntries, err := AutoPayBudgetEntries(pd)
+  budgetEntries, err := AutoPayBudgetEntries(defaultDate.Today)
   if err != nil {
     fmt.Println(err)
     return
@@ -105,10 +104,10 @@ func AutoPay() {
       err = db.QueryRow(`SELECT COUNT(*), store.auto_pay_num FROM ledger JOIN store ON ledger.store_id = store.id
         WHERE extract(month from trans_date) = $1 AND extract(year from trans_date) = $2
         AND ledger.store_id = $3 AND ledger.category_id = $4
-        GROUP BY store.auto_pay_num`, month, year, entry.St.Id, entry.Cat.Id).Scan(&autopay.count, &autopay.numTimes)
+        GROUP BY store.auto_pay_num`, defaultDate.CurrentMonth, defaultDate.CurrentYear, entry.St.Id, entry.Cat.Id).Scan(&autopay.count, &autopay.numTimes)
       if err != nil {
         if err == sql.ErrNoRows {
-          entry.Trans_date = time.Now()
+          entry.Trans_date = defaultDate.Today
           _, err = CreateLedgerEntry(entry)
           if err != nil {
             fmt.Println(err)
@@ -121,7 +120,7 @@ func AutoPay() {
         }
       }
       if autopay.count < autopay.numTimes {
-        entry.Trans_date = time.Now()
+        entry.Trans_date = defaultDate.Today
         _, err = CreateLedgerEntry(entry)
         if err != nil {
           fmt.Println(err)
@@ -137,5 +136,5 @@ func AutoPay() {
   mail.ToIds = []string{"matt.schreiber01@gmail.com"}
   mail.Subject = "New Ledger Entries"
   mail.Body = fmt.Sprintf("Created %d new entries", countNewEntries)
-  mail.SendMail()
+  // mail.SendMail()
 }

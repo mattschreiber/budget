@@ -4,14 +4,17 @@ import (
   // "fmt"
   "time"
   "budget/models"
+  "budget/utilities"
 )
 
 //models.AutoPay() is found in models/ledger.go
 
+var defaultDate = utilities.InitDates()
+
 func ScheduledTasks() {
 
-  t := time.Now()
-  n := time.Date(t.Year(), t.Month(), t.Day(), 3, 0, 0, 0, t.Location())
+  t := defaultDate.Today
+  n := time.Date(t.Year(), t.Month(), t.Day(), 3, 0, 0, 0, defaultDate.GetEst())
 
   if t.After(n)  {
     // run job immediately and then wait until 3am tomorrow
