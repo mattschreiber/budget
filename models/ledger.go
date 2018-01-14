@@ -15,8 +15,6 @@ type autoPay struct {
   numTimes int
 }
 
-var defaultDate = utilities.InitDates()
-
 func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   // now := time.Now()
   // before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
@@ -84,6 +82,8 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
 // email with confirmation of the new entries
 func AutoPay() {
 
+  var defaultDate = utilities.InitDates()
+
   // var emailBody bytes.Buffer
 
   var countNewEntries int
@@ -135,6 +135,6 @@ func AutoPay() {
   mail.SenderId = "matt.schreiber01@gmail.com"
   mail.ToIds = []string{"matt.schreiber01@gmail.com"}
   mail.Subject = "New Ledger Entries"
-  mail.Body = fmt.Sprintf("Created %d new entries", countNewEntries)
-  // mail.SendMail()
+  mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
+  mail.SendMail()
 }

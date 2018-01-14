@@ -24,18 +24,9 @@ func ScheduledTasks() {
 
   d := n.Sub(t)
   time.AfterFunc(d, tick)
-
-
 }
 
 func tick() {
-  // start ticker that will run once per day
-  ticker := time.NewTicker(time.Hour * 24)
-  // run Auto pay then start goroutine for ticker and continue to run autopay once per every 24 hours
   models.AutoPay()
-    go func() {
-        for _ = range ticker.C {
-          models.AutoPay()
-        }
-    }()
+  time.AfterFunc(time.Hour * 24, tick)
 }
