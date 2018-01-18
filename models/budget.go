@@ -69,7 +69,7 @@ func GetBudgetBalance(startDate time.Time, endDate time.Time, c chan Balance) {
   err := db.QueryRow("SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2",
         startDate, endDate).Scan(&balance)
   if err != nil {
-    fmt.Println(err)
+    // fmt.Println(err)
     c <- Balance{0, err}
   }
   c <- Balance{balance, nil}

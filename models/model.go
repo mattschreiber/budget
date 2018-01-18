@@ -50,12 +50,12 @@ func GetAmountSpent(startDate time.Time, endDate time.Time) (total TotalAmounts,
     case budgetBal := <-c1:
       total.BudgetAmount = budgetBal.Amount
       if budgetBal.Error != nil {
-        return TotalAmounts{}, budgetBal.Error
+        total.BudgetAmount = 0
       }
     case ledgerBal := <-c2:
       total.LedgerAmount = ledgerBal.Amount
       if ledgerBal.Error != nil {
-        return TotalAmounts{}, ledgerBal.Error
+        total.LedgerAmount = 0
       }
     }
   }
