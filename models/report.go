@@ -2,6 +2,7 @@ package models
 
 import (
   "fmt"
+  "time"
 )
 
 type CategoryAmounts struct {
@@ -57,17 +58,66 @@ func AmountsByCategory(month, year string) ([]CategoryAmounts, error) {
    return nil, err
   }
 
-  // var m map[string][]CategoryAmounts
-  // m = make(map[string][]CategoryAmounts)
-  //
-  // for _, ca := range arrCa {
-  //   if ca.Budget > 0 {
-  //     m["budget"] = append(m["budget"], ca)
-  //   }
-  //   if ca.Ledger > 0 {
-  //     m["ledger"] = append(m["ledger"], ca)
-  //   }
-  // }
   return arrCa, nil
 
+}
+
+type MonthTotals struct {
+  BudgetTotal int `json:"budget_total"`
+  LedgerTotal int `json:"ledger_total"`
+  Month string `json:"month"`
+  Year float64 `json:"year"`
+}
+
+// returns monthly amounts for budget and ledger. calculated by subtracting total debits from total credits
+// query assumes >= startDate and < endDate
+func MonthlyTotalSpent(startDate, endDate time.Time) ([]MonthTotals, error) {
+  // query to return budget and ledger amount spent by month and year
+  rows, err := db.Query(`SELECT
+      mon,
+      yyyy,
+      sum(actual) as actual,
+      sum(budget) as budget
+  FROM
+  (
+      SELECT
+        to_char(trans_date,'Mon') as mon, extract(year from trans_date) as yyyy,
+        sum(credit-debit) as actual , 0 as budget
+      FROM ledger
+      WHERE trans_date >= $1 AND trans_date < $2
+      GROUP BY mon, yyyy
+      UNION ALL
+      SELECT to_char(trans_date,'Mon') as mon, extract(year from trans_date) as yyyy,
+        0 as actual, sum(credit-debit) as budget
+      FROM budget
+      WHERE trans_date >= $1 AND trans_date < $2
+      GROUP BY mon, yyyy
+  ) x
+  GROUP BY mon, yyyy
+  ORDER BY yyyy, mon DESC`, startDate, endDate)
+
+  if err != nil {
+    fmt.Println(err)
+    return nil, err
+  }
+  defer rows.Close()
+
+  var arrMonthTotals []MonthTotals
+
+  for rows.Next() {
+    var mt MonthTotals
+    err := rows.Scan(&mt.Month, &mt.Year, &mt.LedgerTotal, &mt.BudgetTotal)
+    if err != nil {
+      fmt.Println("err: ", err)
+      return nil, err
+    }
+    arrMonthTotals = append(arrMonthTotals, mt)
+  }
+
+  if err = rows.Err(); err != nil {
+    fmt.Println("error scanning a row", err)
+   return nil, err
+  }
+
+  return arrMonthTotals, nil
 }
