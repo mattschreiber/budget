@@ -38,28 +38,34 @@ func getEst() (*time.Location) {
 }
 // This is a function that will return both the ledger and budget totals for a given time period
 func GetAmountSpent(startDate time.Time, endDate time.Time) (total TotalAmounts, err error) {
-
+  budget_closed, ledger_closed := false, false
   c1 := make(chan Balance) // channel for Balance amount and error handling
   c2 := make(chan Balance) // channel for Balance amount and error handling
 
   go GetBudgetBalance(startDate, endDate, c1)
   go GetLedgerBalance(startDate, endDate, c2)
 
-  for i := 0; i < 2; i++ {
+  for {
+    if (budget_closed && ledger_closed) {
+      return total, nil
+    }
     select {
     case budgetBal := <-c1:
-      total.BudgetAmount = budgetBal.Amount
       if budgetBal.Error != nil {
         total.BudgetAmount = 0
+      }else {
+        total.BudgetAmount = budgetBal.Amount
       }
+      budget_closed = true
     case ledgerBal := <-c2:
-      total.LedgerAmount = ledgerBal.Amount
       if ledgerBal.Error != nil {
         total.LedgerAmount = 0
+      }else {
+        total.LedgerAmount = ledgerBal.Amount
       }
+        ledger_closed = true
     }
   }
-  return total, nil
 }
 
 // ProjectedBalance is a function that calculates the total budgeted balance at any given time.
