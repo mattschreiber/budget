@@ -101,3 +101,17 @@ func DeleteBudgetEntry(w http.ResponseWriter, req *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(deletedId)
 }
+
+func CreateStore(w http.ResponseWriter, req *http.Request){
+  var store models.Store
+  id := make(map[string]int)
+  err := json.NewDecoder(req.Body).Decode(&store)
+  if err != nil {
+    fmt.Println(err)
+    http.Error(w, http.StatusText(500), 500)
+    return
+  }
+  id["id"], err = models.CreateStore(store)
+  w.Header().Set("Content-Type", "application/json")
+  json.NewEncoder(w).Encode(id)
+}

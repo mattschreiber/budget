@@ -34,3 +34,14 @@ func GetAllStores() ([]Store, error) {
   }
   return stores, nil
 }
+
+func CreateStore(store Store) (id int, err error) {
+  // only care about date so set time to 0
+  err = db.QueryRow("INSERT INTO store (store_name) VALUES($1)RETURNING id",
+        store.Store_name).Scan(&id)
+  if err != nil {
+    fmt.Println(err)
+    return -1, err
+  }
+  return id, nil
+}
