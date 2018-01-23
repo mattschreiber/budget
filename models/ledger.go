@@ -7,7 +7,7 @@ import (
   "database/sql"
   "budget/email"
   "budget/utilities"
-  // "sync"
+  "sync"
 )
 
 type autoPay struct {
@@ -44,15 +44,15 @@ func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
   return ledgerEntries, nil
 }
 
-func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
-  var balance int
-  err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date BETWEEN $1 AND $2", startDate, endDate).Scan(&balance)
-  if err != nil {
-    // fmt.Println(err)
-    c <- Balance{0, err}
-  }
-  c <- Balance{balance, nil}
-}
+// func GetLedgerBalance(startDate time.Time, endDate time.Time, c chan Balance) {
+//   var balance int
+//   err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date BETWEEN $1 AND $2", startDate, endDate).Scan(&balance)
+//   if err != nil {
+//     // fmt.Println(err)
+//     c <- Balance{0, err}
+//   }
+//   c <- Balance{balance, nil}
+// }
 
 func CreateLedgerEntry(ledger Model) (id int, err error) {
   // only care about date so set time to 0
@@ -136,5 +136,16 @@ func AutoPay() {
   mail.ToIds = []string{"matt.schreiber01@gmail.com"}
   mail.Subject = "New Ledger Entries"
   mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
-  mail.SendMail()
+  // mail.SendMail()
+}
+
+func GetLedgerBalance(startDate time.Time, endDate time.Time, wg *sync.WaitGroup, total *TotalAmounts) {
+  var balance int
+  defer wg.Done()
+  err := db.QueryRow("SELECT sum(credit-debit) as balance from ledger WHERE trans_date BETWEEN $1 AND $2", startDate, endDate).Scan(&balance)
+  if err != nil {
+    // fmt.Println(err)
+    total.LedgerAmount = 0
+  }
+  total.LedgerAmount = balance
 }
