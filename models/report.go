@@ -67,6 +67,7 @@ type MonthTotals struct {
   LedgerTotal int `json:"ledger_total"`
   Month string `json:"month"`
   Year float64 `json:"year"`
+  // NumMonth int `json:"num_month"`
 }
 
 // returns monthly amounts for budget and ledger. calculated by subtracting total debits from total credits
@@ -82,19 +83,19 @@ func MonthlyTotalSpent(startDate, endDate time.Time) ([]MonthTotals, error) {
   (
       SELECT
         to_char(trans_date,'Mon') as mon, extract(year from trans_date) as yyyy,
-        sum(credit-debit) as actual , 0 as budget
+        sum(credit-debit) as actual , 0 as budget, date_trunc('month', trans_date) as num_month
       FROM ledger
       WHERE trans_date >= $1 AND trans_date < $2
-      GROUP BY mon, yyyy
+      GROUP BY mon, yyyy, date_trunc('month', trans_date)
       UNION ALL
       SELECT to_char(trans_date,'Mon') as mon, extract(year from trans_date) as yyyy,
-        0 as actual, sum(credit-debit) as budget
+        0 as actual, sum(credit-debit) as budget, date_trunc('month', trans_date) as num_month
       FROM budget
       WHERE trans_date >= $1 AND trans_date < $2
-      GROUP BY mon, yyyy
+      GROUP BY mon, yyyy, date_trunc('month', trans_date)
   ) x
-  GROUP BY mon, yyyy
-  ORDER BY yyyy, mon DESC`, startDate, endDate)
+  GROUP BY mon, yyyy, num_month
+  ORDER BY yyyy, num_month ASC`, startDate, endDate)
 
   if err != nil {
     fmt.Println(err)
