@@ -2,7 +2,7 @@ package controllers
 
 import (
   "encoding/json"
-  "budget/models"
+  "github.com/mattschreiber/budget/models"
   "fmt"
   "time"
   "net/http"

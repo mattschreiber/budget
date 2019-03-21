@@ -2,7 +2,7 @@ package main
 
 import (
   // "encoding/json"
-  "budget/models"
+  "github.com/mattschreiber/budget/models"
   // "fmt"
   // "time"
   // "os"
@@ -10,9 +10,9 @@ import (
   "net/http"
 
   "github.com/gorilla/mux"
-  "budget/middlewares"
-  "budget/controllers"
-  "budget/tasks"
+  "github.com/mattschreiber/budget/middlewares"
+  "github.com/mattschreiber/budget/controllers"
+  "github.com/mattschreiber/budget/tasks"
 )
 
 func main() {

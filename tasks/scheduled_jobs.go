@@ -3,8 +3,8 @@ package tasks
 import (
   // "fmt"
   "time"
-  "budget/models"
-  "budget/utilities"
+  "github.com/mattschreiber/budget/models"
+  "github.com/mattschreiber/budget/utilities"
 )
 
 //models.AutoPay() is found in models/ledger.go

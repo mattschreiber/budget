@@ -5,8 +5,8 @@ import (
   "fmt"
   // "bytes"
   "database/sql"
-  "budget/email"
-  "budget/utilities"
+  "github.com/mattschreiber/budget/email"
+  "github.com/mattschreiber/budget/utilities"
   "sync"
 )
 

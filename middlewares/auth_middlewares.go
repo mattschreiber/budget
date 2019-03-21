@@ -13,7 +13,7 @@ package middlewares
 //
 
 import (
-  "budget/models"
+  "github.com/mattschreiber/budget/models"
 	"encoding/json"
 	"fmt"
 	"log"
