@@ -2,7 +2,7 @@ package models
 
 import (
   "fmt"
-  // "os"
+  "os"
   "database/sql"
   _ "github.com/lib/pq"
 )
@@ -16,6 +16,8 @@ const (
 var db *sql.DB
 func InitDB() {
 
+  password := os.Getenv("POSTGRESPWD")
+
   // host := "aa1bw5g82fgor1s.clf0wvbr9kqy.us-east-2.rds.amazonaws.com"
   // port := 5432
   // user := os.Getenv("AWS_DB_USER")
@@ -26,9 +28,9 @@ func InitDB() {
   //   "dbname=%s sslmode=require",
   //   host, port, user, password, dbname)
 
-  psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+  psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
     "dbname=%s sslmode=disable",
-    host, port, user, dbname)
+    host, port, user, password, dbname)
 
   var err error
   db, err = sql.Open("postgres", psqlInfo)
