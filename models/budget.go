@@ -1,142 +1,128 @@
 package models
 
 import (
-  "time"
-  _ "github.com/lib/pq"
-  "fmt"
-  "sync"
+	"fmt"
+	"sync"
+	"time"
 )
 
+// AllBudgetEntries ...
 func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
-  // now := time.Now()
-  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id
+	// now := time.Now()
+	rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id
     FROM budget as b join store as s on b.store_id = s.id join category as c on b.category_id = c.id
     WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date DESC, id DESC`, startDate, endDate)
-  if err != nil {
-    fmt.Println(err)
-    return nil, err
-  }
-  defer rows.Close()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
 
-  var budgetEntries []Model
-  for rows.Next() {
-    var budgetRow Model
-    // err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
-    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.St.Store_name, &budgetRow.Cat.Category_name, &budgetRow.St.Id, &budgetRow.Cat.Id)
-    if err != nil {
-      fmt.Println("error scaninng", err)
-      return nil, err
-    }
-    budgetEntries = append(budgetEntries, budgetRow)
-  }
-  if err = rows.Err(); err != nil {
-    fmt.Println("error scanning a row", err)
-   return nil, err
-  }
-  return budgetEntries, nil
+	var budgetEntries []Model
+	for rows.Next() {
+		var budgetRow Model
+		// err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
+		err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.St.Store_name, &budgetRow.Cat.Category_name, &budgetRow.St.Id, &budgetRow.Cat.Id)
+		if err != nil {
+			fmt.Println("error scaninng", err)
+			return nil, err
+		}
+		budgetEntries = append(budgetEntries, budgetRow)
+	}
+	if err = rows.Err(); err != nil {
+		fmt.Println("error scanning a row", err)
+		return nil, err
+	}
+	return budgetEntries, nil
 }
 
-// func BudgetEntry(id int) (budget Budget, err error) {
-//   err = db.QueryRow("SELECT * FROM budget WHERE id = $1", id).Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
-//   if err != nil {
-//     fmt.Println(err)
-//     return Budget{}, err
-//   }
-//   return budget, nil
-// }
+// BudgetTotal ...
 func BudgetTotal(t time.Time) (balance int, err error) {
 
-  rows, err := db.Query("SELECT SUM(credit - debit) as balance FROM budget where trans_date <= $1", t)
-  if err != nil {
-    return -1, err
-  }
-  defer rows.Close()
-  for rows.Next(){
-    err = rows.Scan(&balance)
-    if err != nil {
-      return -1, err
-    }
-  }
-  if err = rows.Err(); err != nil {
-   return -1, err
-  }
+	rows, err := db.Query("SELECT SUM(credit - debit) as balance FROM budget where trans_date <= $1", t)
+	if err != nil {
+		return -1, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&balance)
+		if err != nil {
+			return -1, err
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return -1, err
+	}
 
-  return balance, nil
+	return balance, nil
 }
 
-// func GetBudgetBalance(startDate time.Time, endDate time.Time, c chan Balance) {
-//   var balance int
-//   err := db.QueryRow("SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2",
-//         startDate, endDate).Scan(&balance)
-//   if err != nil {
-//     // fmt.Println(err)
-//     c <- Balance{0, err}
-//   }
-//   c <- Balance{balance, nil}
-// }
-
+// CreateBudgetEntry ...
 func CreateBudgetEntry(budget Model) (id int, err error) {
-  // only care about date so set time to 0
-  err = db.QueryRow("INSERT INTO budget (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
-        budget.Credit, budget.Debit, budget.Trans_date.In(getEst()), budget.St.Id, budget.Cat.Id).Scan(&id)
-  if err != nil {
-    fmt.Println(err)
-    return -1, err
-  }
-  return id, nil
+	// only care about date so set time to 0
+	err = db.QueryRow("INSERT INTO budget (credit, debit, trans_date, store_id, category_id) VALUES($1, $2, $3, $4, $5)RETURNING id",
+		budget.Credit, budget.Debit, budget.Trans_date.In(getEst()), budget.St.Id, budget.Cat.Id).Scan(&id)
+	if err != nil {
+		fmt.Println(err)
+		return -1, err
+	}
+	return id, nil
 }
 
+// DeleteBudgetEntry ...
 func DeleteBudgetEntry(id string) (count int64, err error) {
-  deleteEntryStmt := "DELETE FROM budget where id = $1"
-  res, err := db.Exec(deleteEntryStmt, id)
-  if err != nil {
-    return -1, err
-  }
-  count, err = res.RowsAffected()
-  if err != nil {
-    return -1, err
-  }
-  return count, nil
+	deleteEntryStmt := "DELETE FROM budget where id = $1"
+	res, err := db.Exec(deleteEntryStmt, id)
+	if err != nil {
+		return -1, err
+	}
+	count, err = res.RowsAffected()
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
 }
 
+// AutoPayBudgetEntries ....
 func AutoPayBudgetEntries(today time.Time) ([]Model, error) {
-  // now := time.Now()
-  rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.store_id, b.category_id
+	// now := time.Now()
+	rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.store_id, b.category_id
     FROM budget as b join store as s on b.store_id = s.id
     WHERE trans_date = $1
     AND s.auto_pay = true`, today)
-  if err != nil {
-    fmt.Println(err)
-    return nil, err
-  }
-  defer rows.Close()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
 
-  var budgetEntries []Model
-  for rows.Next() {
-    var budgetRow Model
-    // err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
-    err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.St.Id, &budgetRow.Cat.Id)
-    if err != nil {
-      fmt.Println("error scaninng", err)
-      return nil, err
-    }
-    budgetEntries = append(budgetEntries, budgetRow)
-  }
-  if err = rows.Err(); err != nil {
-    fmt.Println("error scanning a row", err)
-   return nil, err
-  }
-  return budgetEntries, nil
+	var budgetEntries []Model
+	for rows.Next() {
+		var budgetRow Model
+		// err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
+		err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.St.Id, &budgetRow.Cat.Id)
+		if err != nil {
+			fmt.Println("error scaninng", err)
+			return nil, err
+		}
+		budgetEntries = append(budgetEntries, budgetRow)
+	}
+	if err = rows.Err(); err != nil {
+		fmt.Println("error scanning a row", err)
+		return nil, err
+	}
+	return budgetEntries, nil
 }
 
+// GetBudgetBalance ...
 func GetBudgetBalance(startDate time.Time, endDate time.Time, wg *sync.WaitGroup, total *TotalAmounts) {
-  var balance int
-  defer wg.Done()
-  err := db.QueryRow("SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2",
-        startDate, endDate).Scan(&balance)
-  if err != nil {
-    // fmt.Println(err)
-    total.BudgetAmount = 0
-  }
-  total.BudgetAmount = balance
+	var balance int
+	defer wg.Done()
+	err := db.QueryRow("SELECT SUM(credit-debit) as balance FROM budget WHERE trans_date BETWEEN $1 AND $2",
+		startDate, endDate).Scan(&balance)
+	if err != nil {
+		// fmt.Println(err)
+		total.BudgetAmount = 0
+	}
+	total.BudgetAmount = balance
 }
