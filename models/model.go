@@ -8,12 +8,13 @@ import (
 
 // Model Generic model for describing a budget or ledger
 type Model struct {
-	Id         int       `json:"id"`
-	Credit     int       `json:"credit"`
-	Debit      int       `json:"debit"`
-	Trans_date time.Time `json:"trans_date"`
-	Cat        Category  `json:"category"`
-	St         Store     `json:"store"`
+	Id         int         `json:"id"`
+	Credit     int         `json:"credit"`
+	Debit      int         `json:"debit"`
+	Trans_date time.Time   `json:"trans_date"`
+	Cat        Category    `json:"category"`
+	St         Store       `json:"store"`
+	Pt         PaymentType `json:"payment_type"`
 }
 
 // Balance ...
