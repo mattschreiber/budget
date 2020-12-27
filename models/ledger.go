@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/mattschreiber/budget/email"
 	"github.com/mattschreiber/budget/utilities"
 )
 
@@ -139,12 +140,12 @@ func AutoPay() {
 		}
 	}
 	// send email
-	// mail := email.Mail{}
-	// mail.SenderId = "matt.schreiber01@gmail.com"
-	// mail.ToIds = []string{"matt.schreiber01@gmail.com"}
-	// mail.Subject = "New Ledger Entries"
-	// mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
-	// mail.SendMail()
+	mail := email.Mail{}
+	mail.SenderId = "matt.schreiber01@gmail.com"
+	mail.ToIds = []string{"matt.schreiber01@gmail.com"}
+	mail.Subject = "New Ledger Entries"
+	mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
+	mail.SendMail()
 }
 
 // GetLedgerBalance ...
