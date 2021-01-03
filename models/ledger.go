@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/mattschreiber/budget/email"
 	"github.com/mattschreiber/budget/utilities"
 )
 
@@ -86,6 +85,23 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
 	return count, nil
 }
 
+// UpdateLedgerEntry method accepts a ledgerEntry as input and returns an integer for number of records updated
+func UpdateLedgerEntry(ledgerEntry Model) (count int64, err error) {
+
+	updateStmt := fmt.Sprintf(`UPDATE ledger SET debit = $1, credit = $2 WHERE id = $3`)
+	res, err := db.Exec(updateStmt, ledgerEntry.Debit, ledgerEntry.Credit, ledgerEntry.Id)
+	if err != nil {
+		return -1, err
+	}
+
+	count, err = res.RowsAffected()
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
+
+}
+
 // AutoPay this funcion checks for budget entries on a given day that are marked auto_pay for their store.
 // The method makes sure there isn't already an entry for the current month, creates the entry and then sends an
 // email with confirmation of the new entries
@@ -140,12 +156,12 @@ func AutoPay() {
 		}
 	}
 	// send email
-	mail := email.Mail{}
-	mail.SenderId = "matt.schreiber01@gmail.com"
-	mail.ToIds = []string{"matt.schreiber01@gmail.com"}
-	mail.Subject = "New Ledger Entries"
-	mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
-	mail.SendMail()
+	// mail := email.Mail{}
+	// mail.SenderId = "matt.schreiber01@gmail.com"
+	// mail.ToIds = []string{"matt.schreiber01@gmail.com"}
+	// mail.Subject = "New Ledger Entries"
+	// mail.Body = fmt.Sprintf("Created %d new entries at %s", countNewEntries, defaultDate.Today)
+	// mail.SendMail()
 }
 
 // GetLedgerBalance ...
