@@ -34,6 +34,7 @@ func main() {
 	r.HandleFunc("/ledger-entry/{id}", middlewares.ValidateToken(controllers.DeleteLedgerEntry)).Methods("DELETE", "OPTIONS")
 	r.HandleFunc("/budget-entry/{id}", middlewares.ValidateToken(controllers.DeleteBudgetEntry)).Methods("DELETE", "OPTIONS")
 	r.HandleFunc("/updateledger", middlewares.ValidateToken(controllers.UpdateLedgerEntry)).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/updatebudget", middlewares.ValidateToken(controllers.UpdateBudgetEntry)).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/reports/categories", middlewares.ValidateToken(controllers.GetAmountsByCategory)).Methods("GET", "OPTIONS").Queries("month", "{month}", "year", "{year}")
 	r.HandleFunc("/reports/monthly/amounts", middlewares.ValidateToken(controllers.GetMonthlyTotalSpent)).Methods("GET", "OPTIONS").Queries("startDate", "{startDate}", "endDate", "{endDate}")
 	r.HandleFunc("/payment-types", middlewares.ValidateToken(controllers.GetPaymentTypes)).Methods("GET", "OPTIONS")

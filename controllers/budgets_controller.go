@@ -110,6 +110,26 @@ func DeleteBudgetEntry(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(deletedId)
 }
 
+// UpdateBudgetEntry method to update a single budget entry
+func UpdateBudgetEntry(w http.ResponseWriter, req *http.Request) {
+	var budgetEntry models.Model
+	err := json.NewDecoder(req.Body).Decode(&budgetEntry)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	count, err := models.UpdateBudgetEntry(budgetEntry)
+	if err != nil {
+		fmt.Println("Error parsing ledger entry: ", err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(count)
+
+}
+
 // CreateStore create a new store
 func CreateStore(w http.ResponseWriter, req *http.Request) {
 	var store models.Store
