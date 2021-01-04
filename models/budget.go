@@ -87,8 +87,8 @@ func DeleteBudgetEntry(id string) (count int64, err error) {
 // UpdateBudgetEntry method accepts a ledgerEntry as input and returns an integer for number of records updated
 func UpdateBudgetEntry(budgetEntry Model) (count int64, err error) {
 
-	updateStmt := fmt.Sprintf(`UPDATE budget SET debit = $1, credit = $2 WHERE id = $3`)
-	res, err := db.Exec(updateStmt, budgetEntry.Debit, budgetEntry.Credit, budgetEntry.Id)
+	updateStmt := fmt.Sprintf(`UPDATE budget SET debit = $1, credit = $2, category_id = $3 WHERE id = $4`)
+	res, err := db.Exec(updateStmt, budgetEntry.Debit, budgetEntry.Credit, budgetEntry.Cat.Id, budgetEntry.Id)
 	if err != nil {
 		return -1, err
 	}
