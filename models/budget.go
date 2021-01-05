@@ -9,10 +9,10 @@ import (
 // AllBudgetEntries ...
 func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
 	// now := time.Now()
-	rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id, pt.payment_name
+	rows, err := db.Query(`SELECT b.id, b.credit, b.debit, b.trans_date, s.store_name, c.category_name, b.store_id, b.category_id, pt.payment_name, pt.id
 	FROM budget as b join store as s on b.store_id = s.id join category as c on b.category_id = c.id
 	left join payment_type as pt on b.payment_type_id = pt.id
-    WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date DESC, id DESC`, startDate, endDate)
+    WHERE b.trans_date  BETWEEN $1 AND $2 ORDER BY b.trans_date DESC, b.id DESC`, startDate, endDate)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -23,7 +23,7 @@ func AllBudgetEntries(startDate, endDate time.Time) ([]Model, error) {
 	for rows.Next() {
 		var budgetRow Model
 		// err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.Store_name, &budgetRow.Category_name, &budgetRow.Store_id, &budgetRow.Category_id)
-		err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.St.Store_name, &budgetRow.Cat.Category_name, &budgetRow.St.Id, &budgetRow.Cat.Id, &budgetRow.Pt.Payment_name)
+		err := rows.Scan(&budgetRow.Id, &budgetRow.Credit, &budgetRow.Debit, &budgetRow.Trans_date, &budgetRow.St.Store_name, &budgetRow.Cat.Category_name, &budgetRow.St.Id, &budgetRow.Cat.Id, &budgetRow.Pt.Payment_name, &budgetRow.Pt.Id)
 		if err != nil {
 			fmt.Println("error scaninng", err)
 			return nil, err
@@ -87,8 +87,8 @@ func DeleteBudgetEntry(id string) (count int64, err error) {
 // UpdateBudgetEntry method accepts a ledgerEntry as input and returns an integer for number of records updated
 func UpdateBudgetEntry(budgetEntry Model) (count int64, err error) {
 
-	updateStmt := fmt.Sprintf(`UPDATE budget SET debit = $1, credit = $2, category_id = $3 WHERE id = $4`)
-	res, err := db.Exec(updateStmt, budgetEntry.Debit, budgetEntry.Credit, budgetEntry.Cat.Id, budgetEntry.Id)
+	updateStmt := fmt.Sprintf(`UPDATE budget SET debit = $1, credit = $2, category_id = $3, payment_type_id = $5 WHERE id = $4`)
+	res, err := db.Exec(updateStmt, budgetEntry.Debit, budgetEntry.Credit, budgetEntry.Cat.Id, budgetEntry.Id, budgetEntry.Pt.Id)
 	if err != nil {
 		return -1, err
 	}

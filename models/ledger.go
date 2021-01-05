@@ -20,10 +20,10 @@ type autoPay struct {
 func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
 	// now := time.Now()
 	// before := time.Date(1900, 01, 15, 0, 0, 0, 0, time.UTC)
-	rows, err := db.Query(`SELECT l.id, l.credit, l.debit, l.trans_date, s.store_name, c.category_name, l.store_id, l.category_id, pt.payment_name
+	rows, err := db.Query(`SELECT l.id, l.credit, l.debit, l.trans_date, s.store_name, c.category_name, l.store_id, l.category_id, pt.payment_name, l.payment_type_id
 	FROM ledger as l join store as s on l.store_id = s.id join category as c on l.category_id = c.id
 	left join payment_type as pt on l.payment_type_id = pt.id
-    WHERE trans_date BETWEEN $1 AND $2 ORDER BY l.trans_date DESC, id DESC`, startDate, endDate)
+    WHERE trans_date BETWEEN $1 AND $2 ORDER BY l.trans_date DESC, l.id DESC`, startDate, endDate)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -35,7 +35,7 @@ func AllLedgerEntries(startDate, endDate time.Time) ([]Model, error) {
 	for rows.Next() {
 		var ledgerRow Model
 		err := rows.Scan(&ledgerRow.Id, &ledgerRow.Credit, &ledgerRow.Debit, &ledgerRow.Trans_date, &ledgerRow.St.Store_name,
-			&ledgerRow.Cat.Category_name, &ledgerRow.St.Id, &ledgerRow.Cat.Id, &ledgerRow.Pt.Payment_name)
+			&ledgerRow.Cat.Category_name, &ledgerRow.St.Id, &ledgerRow.Cat.Id, &ledgerRow.Pt.Payment_name, &ledgerRow.Pt.Id)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
@@ -88,8 +88,8 @@ func DeleteLedgerEntry(id string) (count int64, err error) {
 // UpdateLedgerEntry method accepts a ledgerEntry as input and returns an integer for number of records updated
 func UpdateLedgerEntry(ledgerEntry Model) (count int64, err error) {
 
-	updateStmt := fmt.Sprintf(`UPDATE ledger SET debit = $1, credit = $2, category_id = $3 WHERE id = $4`)
-	res, err := db.Exec(updateStmt, ledgerEntry.Debit, ledgerEntry.Credit, ledgerEntry.Cat.Id, ledgerEntry.Id)
+	updateStmt := fmt.Sprintf(`UPDATE ledger SET debit = $1, credit = $2, category_id = $3, payment_type_id = $5 WHERE id = $4`)
+	res, err := db.Exec(updateStmt, ledgerEntry.Debit, ledgerEntry.Credit, ledgerEntry.Cat.Id, ledgerEntry.Id, ledgerEntry.Pt.Id)
 	if err != nil {
 		return -1, err
 	}
